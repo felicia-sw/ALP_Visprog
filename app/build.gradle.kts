@@ -41,7 +41,7 @@ android {
 
 dependencies {
 
-    implementation("androidx.Lifecycle: Lifecycle-viewmodel-compose:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.navigation:navigation-compose:2.7.4")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.logging.interceptor)
     implementation(libs.retrofit)
+    implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -62,6 +63,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation("androidxdatastore:datastore-preferences:1.0.0")
-    implementation("com.auth0.android.jwtdecode:2.0.2")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("com.auth0.android:jwtdecode:2.0.2")
 }

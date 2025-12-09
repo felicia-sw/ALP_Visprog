@@ -1,8 +1,5 @@
 package com.example.alp_visprog.viewModel
 
-import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,14 +7,43 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.lifecycle.ViewModel
-import com.example.todolistapp.uiStates.AuthenticationUIState
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.NavHostController
+import com.auth0.android.jwt.JWT
+import com.example.alp_visprog.App
+import com.example.alp_visprog.uiStates.AuthenticationStatusUIState
+import com.example.alp_visprog.uiStates.AuthenticationUIState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import com.example.todolistapp.R
+import com.example.alp_visprog.Application
+import com.example.alp_visprog.R
+import com.example.alp_visprog.repositories.AuthenticationRepositoryInterface
+import kotlinx.coroutines.launch
+import com.example.alp_visprog.models.ErrorModel
+import com.example.alp_visprog.models.UserResponse
+import com.example.alp_visprog.repositories.UserRepositoryInterface
+import com.google.gson.Gson
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.io.IOException
 
-class AuthenticationViewModel {
+class AuthenticationViewModel(
+
+    private val authenticationRepository: AuthenticationRepositoryInterface,
+    private val userRepository: UserRepositoryInterface
+) : ViewModel() {
+    var authenticationStatus: AuthenticationStatusUIState by mutableStateOf(
+        AuthenticationStatusUIState.Start
+    )
+        private set
+
 
     private val _authenticationUIState = MutableStateFlow(AuthenticationUIState())
 
@@ -148,4 +174,69 @@ class AuthenticationViewModel {
         }
     }
 
+    fun register(navController: NavHostController) {
+        viewModelScope.launch {
+            authenticationStatus = AuthenticationStatusUIState.Loading
+
+            try {
+                val call =
+                    authenticationRepository.register(usernameInput, emailInput, passwordInput)
+
+                call.enqueue(object : Callback<UserResponse> {
+                    override fun onResponse(call: Call<UserResponse>, res: Response<UserResponse>) {
+
+                        if (res.isSuccessful) {
+                            val token = res.body()!!.data.token
+                            val jwt = JWT(token!!)
+                            val username = jwt.getClaim("username").asString()
+
+                            savedUsernameToken(token, username!!)
+                            authenticationStatus =
+                                AuthenticationStatusUIState.Success(res.body()!!.data)
+
+                            resetViewModel()
+                            navController.navigate("home") {
+                                popUpTo("login") {
+                                    inclusive = true
+                                }
+                            }
+                        } else {
+                            val errorMessage = Gson().fromJson(
+                                res.errorBody()!!.charStream(),
+                                ErrorModel::class.java
+                            )
+
+                            authenticationStatus = AuthenticationStatusUIState.Failed(errorMessage.errors)
+                        }
+                    }
+
+                    override fun onFailure(call: Call<UserResponse>, t: Throwable) {
+                        authenticationStatus =
+                            AuthenticationStatusUIState.Failed(t.localizedMessage ?: "Unknown error")
+                    }
+                })
+
+            } catch (error: IOException) {
+                authenticationStatus = AuthenticationStatusUIState.Failed(error.localizedMessage ?: "Network error")
+            }
+        }
+    }
+
+    private fun savedUsernameToken(token: String, username: String) {
+        viewModelScope.launch {
+            userRepository.saveUserToken(token)
+            userRepository.saveUsername(username)
+        }
+    }
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = (this[APPLICATION_KEY] as App)
+                val authenticationRepository = application.container.authenticationRepository
+                val userRepository = application.container.userRepository
+                AuthenticationViewModel(authenticationRepository, userRepository)
+            }
+        }
+    }
 }
