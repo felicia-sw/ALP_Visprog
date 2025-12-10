@@ -258,34 +258,14 @@ fun RegisterView(navController: NavController?) {
             item { Spacer(modifier = Modifier.height(20.dp)) }
 
             item {
-                Column(
-                    modifier = Modifier.padding(horizontal = 40.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Dengan mendaftar, Anda menyetujui",
-                        color = Color.Gray,
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Center
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        TextButton(
-                            onClick = { /* TODO: Open T&C link */ },
-                            contentPadding = PaddingValues(2.dp)
-                        ) {
-                            Text("Syarat dan Ketentuan", color = Color(0xFF0000EE), fontSize = 13.sp)
-                        }
-                        Text(" serta ", color = Color.Gray, fontSize = 13.sp)
-                        TextButton(
-                            onClick = { /* TODO: Open Privacy Policy link */ },
-                            contentPadding = PaddingValues(2.dp)
-                        ) {
-                            Text("Kebijakan Privasi", color = Color(0xFF0000EE), fontSize = 13.sp)
-                        }
-                         Text(" UnityGrid.", color = Color.Gray, fontSize = 13.sp)
+                    Text("Sudah punya akun?", color = Color.Gray, fontSize = 13.sp)
+                    TextButton(onClick = { navController?.navigate("login") }) {
+                        Text("Masuk", color = orangeColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
