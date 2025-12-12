@@ -18,7 +18,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -243,7 +242,12 @@ fun RegisterView(navController: NavController?) {
 
             item {
                 Button(
-                    onClick = { /* TODO: Handle registration */ },
+                    onClick = {
+                        // After registration, navigate into the main app and clear auth from backstack
+                        navController?.navigate("main") {
+                            popUpTo("register") { inclusive = true }
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 30.dp)
