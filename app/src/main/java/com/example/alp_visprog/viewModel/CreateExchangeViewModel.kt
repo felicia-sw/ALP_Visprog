@@ -1,5 +1,6 @@
 package com.example.alp_visprog.viewModel
 
+import android.util.Patterns
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -49,12 +50,20 @@ class CreateExchangeViewModel(
 
     // 4. The Main Submit Function
     fun submitOffer(helpRequestId: Int) {
-        // Validation
+        // 1. Basic Empty Check
         if (name.isBlank() || phone.isBlank() || description.isBlank()) {
             _dataStatus.value = CreateExchangeUIState.Error("Please fill in all required fields.")
             return
         }
 
+        // 2. Email Format Check (NEW)
+        // We only check if the user actually typed something (isNotBlank)
+        if (email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            _dataStatus.value = CreateExchangeUIState.Error("Invalid email format. Please check again.")
+            return
+        }
+
+        // If we pass checks, set loading and call API
         _dataStatus.value = CreateExchangeUIState.Loading
 
         val call = exchangeRepository.createExchange(
@@ -65,6 +74,7 @@ class CreateExchangeViewModel(
             helpRequestId = helpRequestId
         )
 
+        // ... (rest of the network call code remains the same) ...
         call.enqueue(object : Callback<GeneralResponse> {
             override fun onResponse(call: Call<GeneralResponse>, response: Response<GeneralResponse>) {
                 if (response.isSuccessful) {
