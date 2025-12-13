@@ -58,11 +58,12 @@ class AppContainer (
 //        retrofit.create(ExchangeAPIService::class.java)
 //    }
 
-//    yang kamu bikin aku ganti jadi gini ya biar lebih efisien, soalnya harus nambah retrofit buat fitur lain juga biar ga initialize retrofit terus
+    //    yang kamu bikin aku ganti jadi gini ya biar lebih efisien, soalnya harus nambah retrofit buat fitur lain juga biar ga initialize retrofit terus
 //    1. initialize retrofit ONCE here so it can be reused
     private val retrofit: Retrofit by lazy {
         initRetrofit()
-}
+    }
+
     private fun initRetrofit(): Retrofit {
         val logging = HttpLoggingInterceptor()
         logging.level = (HttpLoggingInterceptor.Level.BODY)
@@ -96,7 +97,7 @@ class AppContainer (
         UserRepository(datastore)
     }
 
-//    Now we need to tell AppContainer how to create this Repository so we can use it later.
+    //    Now we need to tell AppContainer how to create this Repository so we can use it later.
 //
 //Open app/src/main/java/com/example/alp_visprog/AppContainer.kt again.
 //

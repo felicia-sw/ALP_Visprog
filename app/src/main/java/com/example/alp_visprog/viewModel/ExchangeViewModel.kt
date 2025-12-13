@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.example.alp_visprog.Application
+import com.example.alp_visprog.App
 import com.example.alp_visprog.models.GeneralResponse
 import com.example.alp_visprog.models.GetAllExchangesResponse
 import com.example.alp_visprog.repositories.ExchangeRepository
@@ -76,7 +76,7 @@ class ExchangeViewModel(
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as Application)
+                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as App)
                 val exchangeRepository = application.container.exchangeRepository
                 ExchangeViewModel(exchangeRepository)
             }
