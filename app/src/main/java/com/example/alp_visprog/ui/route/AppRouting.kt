@@ -23,6 +23,9 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.*
 import com.example.alp_visprog.views.HomeView
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.example.alp_visprog.views.ExchangeListView
 
 enum class AppView(val title: String, val icon: ImageVector? = null) {
     Home("Home", Icons.Filled.Home),
@@ -230,6 +233,22 @@ fun AppRouting() {
             }
             composable(AppView.Profile.name) {
                 ProfileScreen()
+            }
+            // Route format: "exchange_list/{id}"
+            composable(
+                route = "exchange_list/{helpRequestId}",
+                arguments = listOf(
+                    navArgument("helpRequestId") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                // 1. Extract the ID from the URL
+                val helpRequestId = backStackEntry.arguments?.getInt("helpRequestId") ?: 0
+
+                // 2. Show the Screen
+                ExchangeListView(
+                    helpRequestId = helpRequestId,
+                    onBackClick = { navController.navigateUp() }
+                )
             }
         }
     }
