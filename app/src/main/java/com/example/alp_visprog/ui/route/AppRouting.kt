@@ -250,6 +250,20 @@ fun AppRouting() {
                     onBackClick = { navController.navigateUp() }
                 )
             }
+
+            // --- (For Creating Offers) ---
+            composable(
+                route = "create_exchange/{helpRequestId}",
+                arguments = listOf(navArgument("helpRequestId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val helpRequestId = backStackEntry.arguments?.getInt("helpRequestId") ?: 0
+
+                // Import your CreateExchangeView first!
+                com.example.alp_visprog.views.CreateExchangeView(
+                    helpRequestId = helpRequestId,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

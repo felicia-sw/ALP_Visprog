@@ -18,4 +18,24 @@ class ExchangeRepository(
     fun deleteExchange(exchangeId: Int): Call<GeneralResponse> {
         return exchangeAPIService.deleteExchange(exchangeId)
     }
+
+//    to create exchange offer
+fun createExchange(
+    name: String,
+    phone: String,
+    email: String,
+    description: String,
+    helpRequestId: Int
+): Call<GeneralResponse> {
+    // Prepare the data to send
+    val params = mapOf(
+        "name" to name,
+        "phone" to phone,
+        "email" to email,
+        "description" to description,
+        "helpRequestId" to helpRequestId.toString()
+    )
+
+    return exchangeAPIService.createExchange(params)
+}
 }
