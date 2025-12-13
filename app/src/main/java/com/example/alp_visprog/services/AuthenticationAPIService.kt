@@ -7,7 +7,7 @@ import retrofit2.Call
 
 interface AuthenticationAPIService {
 
-    @POST("api/register")
+    @POST("api/register") // /api itu di ambil dari backend di file main.ts
     fun register(@Body registerMap: HashMap<String, String>): Call<UserResponse>
 
     @POST("api/login")
