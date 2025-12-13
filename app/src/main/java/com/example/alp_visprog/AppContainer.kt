@@ -19,6 +19,8 @@ interface AppContainerInterface {
     val userRepository: UserRepositoryInterface
     // exchange repository
     val exchangeRepository: ExchangeRepository
+//    help request repository
+    val helpRequestRepository: HelpRequestRepository
 }
 
 class AppContainer (
@@ -77,18 +79,27 @@ class AppContainer (
             .baseUrl(backendURL)
             .build()
     }
+// -------------------------------------------------------------
+    // 2. SERVICES (Create them using the shared 'retrofit' variable)
+    // -------------------------------------------------------------
 
-    // 2. Authentication Service
     private val authenticationRetrofitService: AuthenticationAPIService by lazy {
         retrofit.create(AuthenticationAPIService::class.java)
     }
 
-    // 3. Exchange API Service (The new addition)
-    val exchangeAPIService: ExchangeAPIService by lazy {
+    private val exchangeAPIService: ExchangeAPIService by lazy {
         retrofit.create(ExchangeAPIService::class.java)
     }
 
-    // 4. Repositories
+    // New: Help Request Service
+    private val helpRequestAPIService: HelpRequestAPIService by lazy {
+        retrofit.create(HelpRequestAPIService::class.java)
+    }
+
+    // -------------------------------------------------------------
+    // 3. REPOSITORIES (Inject the services into them)
+    // -------------------------------------------------------------
+
     override val authenticationRepository: AuthenticationRepositoryInterface by lazy {
         AuthenticationRepository(authenticationRetrofitService)
     }
@@ -97,12 +108,10 @@ class AppContainer (
         UserRepository(datastore)
     }
 
-    //    Now we need to tell AppContainer how to create this Repository so we can use it later.
-//
-//Open app/src/main/java/com/example/alp_visprog/AppContainer.kt again.
-//
-//Add the exchangeRepository property at the bottom of the class (inside the class).
     override val exchangeRepository: ExchangeRepository by lazy {
         ExchangeRepository(exchangeAPIService)
+    }
+    override val helpRequestRepository: HelpRequestRepository by lazy {
+        HelpRequestRepository(helpRequestAPIService)
     }
 }
