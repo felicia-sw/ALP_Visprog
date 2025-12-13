@@ -1,5 +1,6 @@
 package com.example.alp_visprog.services
 
+import com.example.alp_visprog.models.CreateExchangeRequest
 import com.example.alp_visprog.models.GeneralResponse
 import com.example.alp_visprog.models.GetAllExchangesResponse
 import retrofit2.Call
@@ -25,8 +26,14 @@ interface ExchangeAPIService {
 
 //    branch create exchange offer
     // 3. Create Exchange Offer (to respond to someone's post offer)
+//    dont, risky because it's map
+//    @POST("api/exchanges")
+//    fun createExchange(
+//        @Body exchangeMap: Map<String, String> // We send data as a JSON map
+//    ): Call<GeneralResponse>
+
     @POST("api/exchanges")
     fun createExchange(
-        @Body exchangeMap: Map<String, String> // We send data as a JSON map
+        @Body request: CreateExchangeRequest // safer
     ): Call<GeneralResponse>
 }

@@ -1,5 +1,6 @@
 package com.example.alp_visprog.repositories
 
+import com.example.alp_visprog.models.CreateExchangeRequest
 import com.example.alp_visprog.models.GeneralResponse
 import com.example.alp_visprog.models.GetAllExchangesResponse
 import com.example.alp_visprog.services.ExchangeAPIService
@@ -28,14 +29,25 @@ fun createExchange(
     helpRequestId: Int
 ): Call<GeneralResponse> {
     // Prepare the data to send
-    val params = mapOf(
-        "name" to name,
-        "phone" to phone,
-        "email" to email,
-        "description" to description,
-        "helpRequestId" to helpRequestId.toString()
+//    val params = mapOf(
+//        "name" to name,
+//        "phone" to phone,
+//        "email" to email,
+//        "description" to description,
+//        "helpRequestId" to helpRequestId.toString()
+//    )
+//
+//    return exchangeAPIService.createExchange(params)
+
+    // CREATE THE OBJECT (Not a Map!)
+    val request = CreateExchangeRequest(
+        name = name,
+        phone = phone,
+        email = email,
+        description = description,
+        helpRequestId = helpRequestId // This keeps it as an Int (1), which fixes the error
     )
 
-    return exchangeAPIService.createExchange(params)
+    return exchangeAPIService.createExchange(request)
 }
 }
