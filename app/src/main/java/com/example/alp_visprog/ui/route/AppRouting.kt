@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -17,13 +18,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import com.example.alp_visprog.views.HomeView
-import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.alp_visprog.views.ExchangeListView
 
@@ -57,7 +59,8 @@ fun MyTopAppBar(
                     )
                 }
             }
-        })
+        }
+    )
 }
 
 @Composable
@@ -66,17 +69,12 @@ fun CustomBottomNavigationBar(
     currentDestination: NavDestination?,
     modifier: Modifier = Modifier
 ) {
-    val items = listOf(
-        BottonNavItem(AppView.Home, "Home"),
-        BottonNavItem(AppView.Profile, "Profil")
-    )
-
     Box(modifier = modifier) {
         NavigationBar(
+            modifier = Modifier.navigationBarsPadding(),
             containerColor = Color.White,
             contentColor = Color.Gray
         ) {
-            // Home item
             val homeSelected = currentDestination?.hierarchy?.any { it.route == AppView.Home.name } == true
             NavigationBarItem(
                 icon = {
@@ -104,7 +102,6 @@ fun CustomBottomNavigationBar(
                 }
             )
 
-            // Empty space for FAB
             NavigationBarItem(
                 icon = { },
                 label = { Text("") },
@@ -113,7 +110,6 @@ fun CustomBottomNavigationBar(
                 enabled = false
             )
 
-            // Profile item
             val profileSelected = currentDestination?.hierarchy?.any { it.route == AppView.Profile.name } == true
             NavigationBarItem(
                 icon = {
@@ -142,7 +138,6 @@ fun CustomBottomNavigationBar(
             )
         }
 
-        // Centered FAB for "Buat"
         FloatingActionButton(
             onClick = {
                 navController.navigate(AppView.Create.name) {
@@ -171,33 +166,29 @@ fun CustomBottomNavigationBar(
 }
 
 @Composable
-fun HomeScreen(navController: NavController) {
-    HomeView(navControlIer = navController)
-}
-
-@Composable
-fun CreateScreen() {
-    Surface(modifier = Modifier.fillMaxSize()) {
+fun CreateScreen(modifier: Modifier = Modifier) {
+    Surface(modifier = modifier.fillMaxSize()) {
         Text(
             text = "Create Screen",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(15.dp)
         )
     }
 }
 
 @Composable
-fun ProfileScreen() {
-    Surface(modifier = Modifier.fillMaxSize()) {
+fun ProfileScreen(modifier: Modifier = Modifier) {
+    Surface(modifier = modifier.fillMaxSize()) {
         Text(
             text = "Profile Screen",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(15.dp)
         )
     }
 }
 
 @Composable
+@Preview(showBackground = true, showSystemUi = true)
 fun AppRouting() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -207,17 +198,21 @@ fun AppRouting() {
 
     Scaffold(
         topBar = {
-            MyTopAppBar(
-                currentView = currentView,
-                canNavigateBack = navController.previousBackStackEntry != null,
-                navigateUp = { navController.navigateUp() }
-            )
+            if (currentRoute != AppView.Home.name) {
+                MyTopAppBar(
+                    currentView = currentView,
+                    canNavigateBack = navController.previousBackStackEntry != null,
+                    navigateUp = { navController.navigateUp() }
+                )
+            }
         },
         bottomBar = {
-            CustomBottomNavigationBar(
-                navController = navController,
-                currentDestination = currentDestination
-            )
+            if (currentRoute == AppView.Home.name || currentRoute == AppView.Create.name || currentRoute == AppView.Profile.name) {
+                CustomBottomNavigationBar(
+                    navController = navController,
+                    currentDestination = currentDestination
+                )
+            }
         }
     ) { innerPadding ->
         NavHost(
@@ -225,40 +220,34 @@ fun AppRouting() {
             startDestination = AppView.Home.name,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(AppView.Home.name) {
-                HomeScreen(navController = navController)
+            composable(route = AppView.Home.name) {
+                HomeView(navController = navController, modifier = Modifier.fillMaxSize())
             }
-            composable(AppView.Create.name) {
-                CreateScreen()
+
+            composable(route = AppView.Create.name) {
+                CreateScreen(modifier = Modifier.fillMaxSize())
             }
-            composable(AppView.Profile.name) {
-                ProfileScreen()
+
+            composable(route = AppView.Profile.name) {
+                ProfileScreen(modifier = Modifier.fillMaxSize())
             }
-            // Route format: "exchange_list/{id}"
+
             composable(
                 route = "exchange_list/{helpRequestId}",
-                arguments = listOf(
-                    navArgument("helpRequestId") { type = NavType.IntType }
-                )
+                arguments = listOf(navArgument("helpRequestId") { type = NavType.IntType })
             ) { backStackEntry ->
-                // 1. Extract the ID from the URL
                 val helpRequestId = backStackEntry.arguments?.getInt("helpRequestId") ?: 0
-
-                // 2. Show the Screen
                 ExchangeListView(
                     helpRequestId = helpRequestId,
                     onBackClick = { navController.navigateUp() }
                 )
             }
 
-            // --- (For Creating Offers) ---
             composable(
                 route = "create_exchange/{helpRequestId}",
                 arguments = listOf(navArgument("helpRequestId") { type = NavType.IntType })
             ) { backStackEntry ->
                 val helpRequestId = backStackEntry.arguments?.getInt("helpRequestId") ?: 0
-
-                // Import your CreateExchangeView first!
                 com.example.alp_visprog.views.CreateExchangeView(
                     helpRequestId = helpRequestId,
                     onBackClick = { navController.popBackStack() }

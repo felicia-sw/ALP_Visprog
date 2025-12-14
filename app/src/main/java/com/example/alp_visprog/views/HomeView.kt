@@ -1,11 +1,9 @@
 package com.example.alp_visprog.views
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -13,10 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -24,21 +19,39 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import coil.compose.AsyncImage
-import com.example.alp_visprog.models.HelpRequest
-import com.example.alp_visprog.models.HelpRequestUser
+import com.example.alp_visprog.models.HelpRequestModel
 import com.example.alp_visprog.uiStates.HomeUIState
 import com.example.alp_visprog.viewModel.HomeViewModel
 import com.example.alp_visprog.ui.theme.BrandOrange
 import com.example.alp_visprog.ui.theme.BrandTeal
+import androidx.compose.ui.platform.LocalInspectionMode
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun HomeView(
-    viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
     modifier: Modifier = Modifier,
+    // Accept an optional HomeViewModel for testing; when null we'll obtain it at runtime.
+    homeViewModel: HomeViewModel? = null,
     navController: NavController = rememberNavController()
 ) {
+    // If we're in the Preview (inspection) mode, avoid instantiating the real ViewModel
+    val isPreview = LocalInspectionMode.current
+
+    if (isPreview) {
+        // Show a simple preview state without constructing model classes
+        HomeContent(
+            state = HomeUIState.Loading,
+            onRefresh = {},
+            onFilterClick = { _, _ -> },
+            modifier = modifier
+        )
+        return
+    }
+
+    // Normal runtime path: obtain the real ViewModel if not supplied
+    val viewModel = homeViewModel ?: viewModel(factory = HomeViewModel.Factory)
+
     LaunchedEffect(Unit) {
         viewModel.loadHelpRequests()
     }
@@ -268,6 +281,7 @@ fun HomeContent(
                     }
 
                     Spacer(modifier = Modifier.height(15.dp))
+
                     if (state.data.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -294,7 +308,7 @@ fun HomeContent(
                             verticalArrangement = Arrangement.spacedBy(15.dp)
                         ) {
                             items(state.data) { helpRequest ->
-                                HelpRequestCard(helpRequest = helpRequest)
+                                HelpRequestCard(helpRequest)
                             }
                         }
                     }
@@ -305,16 +319,15 @@ fun HomeContent(
 }
 
 @Composable
-fun HelpRequestCard(helpRequest: HelpRequest) {
+fun HelpRequestCard(helpRequest: HelpRequestModel) {
+    // Render using the actual fields from backend: nameOfProduct, exchangeProductName, description, location, user
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -322,192 +335,66 @@ fun HelpRequestCard(helpRequest: HelpRequest) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Surface(
-                        modifier = Modifier.size(40.dp),
-                        shape = CircleShape,
-                        color = Color(0xFFE0E0E0)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "User avatar",
-                            modifier = Modifier.padding(10.dp),
-                            tint = Color.Gray
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = helpRequest.user?.name ?: "Anonymous",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Location",
-                                modifier = Modifier.size(10.dp),
-                                tint = Color.Gray
-                            )
-                            Text(
-                                text = " 0.5 km",
-                                fontSize = 10.sp,
-                                color = Color.Gray
-                            )
-                            Spacer(modifier = Modifier.width(7.dp))
-                            Icon(
-                                imageVector = Icons.Default.DateRange,
-                                contentDescription = "Time",
-                                modifier = Modifier.size(10.dp),
-                                tint = Color.Gray
-                            )
-                            Text(
-                                text = " 2 jam lalu",
-                                fontSize = 10.sp,
-                                color = Color.Gray
-                            )
-                        }
-                    }
-                }
-                Surface(
-                    color = if (helpRequest.status == "MENAWARKAN") BrandOrange else BrandTeal,
-                    shape = RoundedCornerShape(10.dp)
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (helpRequest.status == "MENAWARKAN") "MENAWARKAN" else "MENCARI",
-                        color = Color.White,
-                        fontSize = 10.sp,
+                        text = helpRequest.nameOfProduct,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        fontSize = 14.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = helpRequest.user?.username ?: "Unknown User",
+                        fontSize = 12.sp,
+                        color = Color.Gray
                     )
                 }
-            }
-
-            if (helpRequest.imageUrl != null) {
-                AsyncImage(
-                    model = helpRequest.imageUrl,
-                    contentDescription = helpRequest.title,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentScale = ContentScale.Crop
+                Text(
+                    text = helpRequest.location,
+                    fontSize = 11.sp,
+                    color = Color.Gray
                 )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .background(Color(0xFFE0E0E0)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (helpRequest.type == "BARANG") Icons.Default.ShoppingBag else Icons.Default.Build,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = Color.Gray
-                    )
-                }
             }
 
-            Column(
-                modifier = Modifier.padding(10.dp)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = helpRequest.description,
+                fontSize = 13.sp,
+                color = Color.DarkGray,
+                modifier = Modifier.padding(horizontal = 10.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Tukar dengan: ${helpRequest.exchangeProductName}",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = BrandOrange,
+                modifier = Modifier.padding(horizontal = 10.dp)
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Button(
+                    onClick = { /* runtime action */ },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)
                 ) {
-                    Text(
-                        text = helpRequest.title,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Surface(
-                        color = if (helpRequest.status == "MENAWARKAN") BrandOrange else BrandTeal,
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text(
-                            text = "Stok: ${helpRequest.stock}",
-                            color = Color.White,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                        )
-                    }
+                    Text("Tawarkan Tukar")
                 }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                if (helpRequest.status == "MENCARI" && helpRequest.seekingItem != null) {
-                    Surface(
-                        color = Color(0xFFE0F2F1),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = null,
-                                modifier = Modifier.size(15.dp),
-                                tint = BrandTeal
-                            )
-                            Spacer(modifier = Modifier.width(7.dp))
-                            Text(
-                                text = "Mencari: ${helpRequest.seekingItem}",
-                                fontSize = 10.sp,
-                                color = Color(0xFF00695C),
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                }
-
-                helpRequest.description?.let {
-                    Text(
-                        text = it,
-                        fontSize = 13.sp,
-                        color = Color.Gray,
-                        maxLines = 2,
-                        lineHeight = 18.sp
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                OutlinedButton(
+                    onClick = { /* runtime action */ },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandOrange)
                 ) {
-                    Button(
-                        onClick = { },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = BrandOrange),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(vertical = 10.dp)
-                    ) {
-                        Text(
-                            text = if (helpRequest.status == "MENAWARKAN") "Tawarkan Tukar" else "Add to cart",
-                            fontSize = 13.sp
-                        )
-                    }
-                    OutlinedButton(
-                        onClick = { },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = BrandOrange
-                        ),
-                        contentPadding = PaddingValues(vertical = 10.dp)
-                    ) {
-                        Text("Hubungi Penjual", fontSize = 13.sp)
-                    }
+                    Text("Hubungi Penjual")
                 }
             }
         }
@@ -517,25 +404,8 @@ fun HelpRequestCard(helpRequest: HelpRequest) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun HomeViewPreview() {
-    val dummyData = listOf(
-        HelpRequest(
-            id = 1,
-            title = "Need Rice",
-            description = "Looking for 5kg of rice",
-            type = "BARANG",
-            status = "MENCARI",
-            stock = 5,
-            imageUrl = null,
-            seekingItem = "Rice",
-            userId = 1,
-            user = HelpRequestUser(1, "eileen", "Sby"),
-            createdAt = "2023-12-01",
-            updatedAt = "2023-12-01"
-        )
-    )
-
     HomeContent(
-        state = HomeUIState.Success(dummyData),
+        state = HomeUIState.Loading,
         onRefresh = {},
         onFilterClick = { _, _ -> }
     )
