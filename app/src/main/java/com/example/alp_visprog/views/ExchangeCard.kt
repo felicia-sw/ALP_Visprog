@@ -29,17 +29,16 @@ import com.example.alp_visprog.ui.theme.ALP_VisprogTheme
 @Composable
 fun ExchangeCard(
     exchange: ExchangeModel,
-    onDeleteClick: () -> Unit
-) {
+    onDeleteClick: () -> Unit) {
     Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(15.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -52,14 +51,14 @@ fun ExchangeCard(
                 )
                 Text(
                     text = "Phone: ${exchange.phone}",
-                    fontSize = 14.sp,
+                    fontSize = 15.sp,
                     color = Color.Gray
                 )
                 if (!exchange.description.isNullOrEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(5.dp))
                     Text(
                         text = "\"${exchange.description}\"",
-                        fontSize = 14.sp,
+                        fontSize = 15.sp,
                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                     )
                 }
@@ -84,10 +83,10 @@ fun ExchangeCardPreview() {
         ExchangeCard(
             exchange = ExchangeModel(
                 id = 1,
-                name = "Timothy Neighbor",
+                name = "Eileen ",
                 phone = "08123456789",
-                email = "timothy@example.com",
-                description = "I have the ladder you need! Let's meet up.",
+                email = "eileen@gmail.com",
+                description = "I have the ladder you need, chat me to discuss where we can meet up.",
                 helpRequestId = 101
             ),
             onDeleteClick = {}
