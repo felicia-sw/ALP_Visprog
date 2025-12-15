@@ -24,22 +24,27 @@ import com.example.alp_visprog.models.ExchangeModel
 import com.example.alp_visprog.ui.theme.ALP_VisprogTheme
 import com.example.alp_visprog.uiStates.ExchangeUIState
 import com.example.alp_visprog.viewModel.ExchangeViewModel
+import androidx.compose.runtime.collectAsState // <--- Make sure this is imported
+import androidx.compose.runtime.getValue      // <--- And this
 
-// 1. STATEFUL COMPOSABLE (Has ViewModel logic)
-// Use this one in your Navigation
 @Composable
 fun ExchangeListView(
     helpRequestId: Int,
     viewModel: ExchangeViewModel = viewModel(factory = ExchangeViewModel.Factory),
     onBackClick: () -> Unit = {}
 ) {
+    // 1. Fetch data on launch
     LaunchedEffect(helpRequestId) {
         viewModel.getExchangeOffers(helpRequestId)
     }
 
-    // Pass the state down to the stateless UI
+    // 2. COLLECT the StateFlow (This is the new "Best Practice" part)
+    // Instead of "viewModel.exchangeUIState", we collect it as a state
+    val state by viewModel.exchangeUIState.collectAsState()
+
+    // Pass the collected 'state' down to your content
     ExchangeListContent(
-        state = viewModel.exchangeUIState,
+        state = state, // <--- Pass the value we just collected
         onDeleteClick = { exchangeId ->
             viewModel.deleteExchange(exchangeId, helpRequestId)
         },
