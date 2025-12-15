@@ -1,10 +1,8 @@
 package com.example.alp_visprog.views
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
@@ -26,7 +23,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -37,7 +33,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -47,7 +42,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.alp_visprog.ui.theme.BrandOrange // Using the color from Color.kt
+import com.example.alp_visprog.ui.theme.BrandOrange
 import com.example.alp_visprog.uiStates.CreateExchangeUIState
 import com.example.alp_visprog.viewModel.CreateExchangeViewModel
 
@@ -72,7 +67,7 @@ fun CreateExchangeView(
             is CreateExchangeUIState.Success -> {
                 Toast.makeText(context, "Offer sent successfully!", Toast.LENGTH_SHORT).show()
                 viewModel.resetForm()
-                onBackClick()
+                onBackClick() // Auto-navigate back on success
             }
             else -> {}
         }
@@ -88,15 +83,7 @@ fun CreateExchangeView(
                         fontWeight = FontWeight.Bold
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
-                },
+                // Navigation Icon removed here as requested
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = BrandOrange //
                 )
@@ -151,7 +138,7 @@ fun CreateExchangeView(
             CustomExchangeTextField(
                 value = viewModel.email,
                 onValueChange = { viewModel.email = it },
-                label = "Email (Optional)",
+                label = "Email",
                 icon = Icons.Default.Email,
                 placeholder = "name@email.com",
                 keyboardType = KeyboardType.Email
@@ -199,7 +186,7 @@ fun CreateExchangeView(
     }
 }
 
-// Reusable Text Field Component to keep the main code clean
+// Reusable Text Field Component
 @Composable
 fun CustomExchangeTextField(
     value: String,
@@ -233,12 +220,12 @@ fun CustomExchangeTextField(
                 )
             },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            shape = RoundedCornerShape(10.dp), // Matches LoginView style
+            shape = RoundedCornerShape(10.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = BrandOrange,
                 unfocusedBorderColor = Color.LightGray,
                 focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color(0xFFFAFAFA) // Slight grey for depth
+                unfocusedContainerColor = Color(0xFFFAFAFA)
             ),
             singleLine = singleLine,
             minLines = minLines
