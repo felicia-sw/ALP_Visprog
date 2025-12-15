@@ -56,6 +56,7 @@ fun HomeView(
                 Text(text = "See Offers for Post #1")
             }
 
+
         }
 
     }
