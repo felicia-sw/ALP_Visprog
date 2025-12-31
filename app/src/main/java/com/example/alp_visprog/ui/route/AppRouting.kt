@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,7 +37,8 @@ import kotlinx.coroutines.launch
 enum class AppView(val title: String, val icon: ImageVector? = null) {
     Home("Home", Icons.Filled.Home),
     Create(title = "Buat", Icons.Filled.Add),
-    Profile(title = "Profil", Icons.Filled.Person)
+    Profile(title = "Profil", Icons.Filled.Person),
+    ShoppingCart(title = "Keranjang", Icons.Filled.ShoppingCart) // Add this
 }
 
 data class BottonNavItem(val view: AppView, val label: String)
@@ -244,6 +246,12 @@ fun AppRouting() {
                 com.example.alp_visprog.views.CreateExchangeView(
                     helpRequestId = helpRequestId,
                     onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(AppView.ShoppingCart.name) {
+                com.example.alp_visprog.views.ShoppingCartView(
+                    onBackClick = { navController.navigateUp() }
                 )
             }
         }
