@@ -6,21 +6,25 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.alp_visprog.App
 import com.example.alp_visprog.models.CreateHelpRequestResponse
 import com.example.alp_visprog.repositories.HelpRequestRepository
+import com.example.alp_visprog.repositories.UserRepositoryInterface
 import com.example.alp_visprog.uiStates.CreateExchangeUIState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class CreateHelpRequestViewModel(
-    private val helpRequestRepository: HelpRequestRepository
+    private val helpRequestRepository: HelpRequestRepository,
+    private val userRepository: UserRepositoryInterface // [1] Injected Dependency
 ) : ViewModel() {
 
     // --- Form Inputs ---
@@ -29,7 +33,7 @@ class CreateHelpRequestViewModel(
     var exchangeProductName by mutableStateOf("")
     var location by mutableStateOf("")
 
-    // NEW: Contact Fields
+    // Contact Fields
     var contactPhone by mutableStateOf("")
     var contactEmail by mutableStateOf("")
 
@@ -44,6 +48,23 @@ class CreateHelpRequestViewModel(
     private val _dataStatus = MutableStateFlow<CreateExchangeUIState>(CreateExchangeUIState.Idle)
     val dataStatus: StateFlow<CreateExchangeUIState> = _dataStatus.asStateFlow()
 
+    // [2] Init Block: Load User Profile Data automatically when ViewModel is created
+    init {
+        loadUserProfile()
+    }
+
+    private fun loadUserProfile() {
+        viewModelScope.launch {
+            // [3] Collect the email flow from Repository
+            userRepository.currentUserEmail.collect { email ->
+                // Only pre-fill if field is empty and we have a valid email
+                if (contactEmail.isEmpty() && email.isNotEmpty() && email != "Unknown") {
+                    contactEmail = email
+                }
+            }
+        }
+    }
+
     fun clearErrorMessage() {
         _dataStatus.value = CreateExchangeUIState.Idle
     }
@@ -55,13 +76,15 @@ class CreateHelpRequestViewModel(
         exchangeProductName = ""
         location = ""
         contactPhone = ""
+        // We clear email, but re-loading profile will pre-fill it again if saved
         contactEmail = ""
         selectedImageUri = null
         imageUrl = ""
+
+        loadUserProfile() // Re-fetch default data
     }
 
     fun submitHelpRequest() {
-        // 1. Basic Validation
         if (nameOfProduct.isBlank() || description.isBlank() || contactPhone.isBlank()) {
             _dataStatus.value = CreateExchangeUIState.Error("Please fill in required fields (Name, Desc, Phone).")
             return
@@ -69,12 +92,8 @@ class CreateHelpRequestViewModel(
 
         _dataStatus.value = CreateExchangeUIState.Loading
 
-        // 2. Prepare Image URL
-        // In a real app, upload 'selectedImageUri' to a server first.
-        // For now, we send the URI string as a placeholder.
         val finalImageUrl = selectedImageUri?.toString() ?: ""
 
-        // 3. Call Repository with NEW fields
         val requestCall = helpRequestRepository.createHelpRequest(
             nameOfProduct = nameOfProduct,
             description = description,
@@ -82,9 +101,9 @@ class CreateHelpRequestViewModel(
             location = location,
             imageUrl = finalImageUrl,
             categoryId = categoryIdInput.toIntOrNull() ?: 1,
-            userId = 1, // TODO: Replace with logged-in User ID
-            contactPhone = contactPhone, // Passing Phone
-            contactEmail = contactEmail  // Passing Email
+            userId = 1, // TODO: Replace with actual User ID if available
+            contactPhone = contactPhone,
+            contactEmail = contactEmail
         )
 
         requestCall.enqueue(object : Callback<CreateHelpRequestResponse> {
@@ -106,7 +125,10 @@ class CreateHelpRequestViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as App)
-                CreateHelpRequestViewModel(application.container.helpRequestRepository)
+                CreateHelpRequestViewModel(
+                    application.container.helpRequestRepository,
+                    application.container.userRepository // [4] Pass UserRepository here
+                )
             }
         }
     }

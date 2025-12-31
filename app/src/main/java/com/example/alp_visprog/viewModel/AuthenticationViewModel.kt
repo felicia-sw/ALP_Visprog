@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import com.example.alp_visprog.Application
+//import com.example.alp_visprog.Application
 import com.example.alp_visprog.R
 import com.example.alp_visprog.repositories.AuthenticationRepositoryInterface
 import kotlinx.coroutines.launch
@@ -185,14 +185,18 @@ class AuthenticationViewModel(
                 call.enqueue(object : Callback<UserResponse> {
                     override fun onResponse(call: Call<UserResponse>, res: Response<UserResponse>) {
 
+                        // Inside fun register(...)
                         if (res.isSuccessful) {
                             val token = res.body()!!.data.token
                             val jwt = JWT(token!!)
                             val username = jwt.getClaim("username").asString()
 
-                            savedUsernameToken(token, username!!)
+                            // [Modified] Pass 'emailInput' here
+                            savedUsernameToken(token, username!!, emailInput)
+
                             authenticationStatus =
                                 AuthenticationStatusUIState.Success(res.body()!!.data)
+                            // ... rest of code
 
                             resetViewModel()
                             navController.navigate("home") {
@@ -222,10 +226,12 @@ class AuthenticationViewModel(
         }
     }
 
-    private fun savedUsernameToken(token: String, username: String) {
+// [Modified] Accept email as a parameter
+    private fun savedUsernameToken(token: String, username: String, email: String) {
         viewModelScope.launch {
             userRepository.saveUserToken(token)
             userRepository.saveUsername(username)
+            userRepository.saveUserEmail(email) // [New] Save the email
         }
     }
 
