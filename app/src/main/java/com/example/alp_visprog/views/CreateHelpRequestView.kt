@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,7 +23,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -38,12 +38,14 @@ import com.example.alp_visprog.uiStates.CreateExchangeUIState
 import com.example.alp_visprog.viewModel.CreateHelpRequestViewModel
 
 // --- Colors ---
-val BrandTeal = Color(0xFF4ECDC4)
-val TextDark = Color(0xFF1F2937)
-val TextGray = Color(0xFF6B7280)
-val BorderGray = Color(0xFFE5E7EB)
+val BrandCoral = Color(0xFFE97856) // Primary Orange
+val BrandCyan = Color(0xFF20C4D4)  // Teal/Cyan
+val BackgroundCream = Color(0xFFFCF8F3) // Warm Cream
+val TextDark = Color(0xFF1F2121)
+val TextLight = Color(0xFFABABAB)
+val BorderGray = Color(0xFFE8E8E8)
+val IconGray = Color(0xFF999999)
 
-// --- Main Composable ---
 @Composable
 fun CreateHelpRequestView(
     viewModel: CreateHelpRequestViewModel = viewModel(factory = CreateHelpRequestViewModel.Factory),
@@ -52,13 +54,12 @@ fun CreateHelpRequestView(
     val dataStatus by viewModel.dataStatus.collectAsState()
     val context = LocalContext.current
 
-    // 1. Image Picker Launcher
+    // Image Picker
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri -> viewModel.selectedImageUri = uri }
     )
 
-    // 2. Handle Status (Success/Error)
     LaunchedEffect(dataStatus) {
         when (val status = dataStatus) {
             is CreateExchangeUIState.Error -> {
@@ -74,67 +75,25 @@ fun CreateHelpRequestView(
         }
     }
 
-    // 3. Render Content
     CreateHelpRequestContent(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.95f) // Bottom sheet height
-            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+            .fillMaxHeight(0.95f)
+            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .background(Color.White),
 
-        // Data Passing
-        nameOfProduct = viewModel.nameOfProduct,
-        onNameChange = { viewModel.nameOfProduct = it },
-        location = viewModel.location,
-        onLocationChange = { viewModel.location = it },
-        categoryIdInput = viewModel.categoryIdInput,
-        onCategoryIdChange = { viewModel.categoryIdInput = it },
-        exchangeProductName = viewModel.exchangeProductName,
-        onExchangeProductChange = { viewModel.exchangeProductName = it },
-
-        // Image Logic
-        selectedImageUri = viewModel.selectedImageUri,
-        onImageClick = {
-            photoPickerLauncher.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-            )
-        },
-
-        description = viewModel.description,
-        onDescriptionChange = { viewModel.description = it },
-
-        // Contact Data
-        contactPhone = viewModel.contactPhone,
-        onPhoneChange = { viewModel.contactPhone = it },
-        contactEmail = viewModel.contactEmail,
-        onEmailChange = { viewModel.contactEmail = it },
-
-        dataStatus = dataStatus,
+        viewModel = viewModel,
+        onImageClick = { photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
         onSubmit = { viewModel.submitHelpRequest() },
         onClose = onBackClick
     )
 }
 
-// --- Content Composable (Stateless) ---
 @Composable
 fun CreateHelpRequestContent(
     modifier: Modifier = Modifier,
-    nameOfProduct: String,
-    onNameChange: (String) -> Unit,
-    location: String,
-    onLocationChange: (String) -> Unit,
-    categoryIdInput: String,
-    onCategoryIdChange: (String) -> Unit,
-    exchangeProductName: String,
-    onExchangeProductChange: (String) -> Unit,
-    selectedImageUri: Uri?,
+    viewModel: CreateHelpRequestViewModel,
     onImageClick: () -> Unit,
-    description: String,
-    onDescriptionChange: (String) -> Unit,
-    contactPhone: String,
-    onPhoneChange: (String) -> Unit,
-    contactEmail: String,
-    onEmailChange: (String) -> Unit,
-    dataStatus: CreateExchangeUIState,
     onSubmit: () -> Unit,
     onClose: () -> Unit
 ) {
@@ -146,202 +105,109 @@ fun CreateHelpRequestContent(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                        .padding(horizontal = 24.dp, vertical = 20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Buat Tawaran Baru",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextDark
-                    )
-                    IconButton(
-                        onClick = onClose,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(Color.Transparent, CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = TextDark
-                        )
+                    Text("Buat Tawaran Baru", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                    IconButton(onClick = onClose) {
+                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = TextDark)
                     }
                 }
                 HorizontalDivider(thickness = 1.dp, color = BorderGray)
             }
         },
         bottomBar = {
-            // Sticky Bottom Button
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White)
-                    .padding(20.dp)
+                    .padding(24.dp)
             ) {
                 Button(
                     onClick = onSubmit,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BrandTeal,
-                        contentColor = Color.White
-                    ),
-                    enabled = dataStatus !is CreateExchangeUIState.Loading
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandCoral, contentColor = Color.White),
+                    enabled = viewModel.dataStatus.collectAsState().value !is CreateExchangeUIState.Loading
                 ) {
-                    if (dataStatus is CreateExchangeUIState.Loading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                    } else {
-                        Text("Buat Tawaran", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
+                    Text("Buat Tawaran", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
     ) { paddingValues ->
-        // Scrollable Form Content
         Column(
             modifier = Modifier
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp),
+                .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // 1. Kategori Selection
-            Column {
-                Text("Kategori", fontWeight = FontWeight.Medium, color = TextDark, fontSize = 14.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CategoryButton(
-                        text = "Barang",
-                        isSelected = categoryIdInput == "1",
-                        onClick = { onCategoryIdChange("1") },
-                        modifier = Modifier.weight(1f)
-                    )
-                    CategoryButton(
-                        text = "Jasa",
-                        isSelected = categoryIdInput == "2",
-                        onClick = { onCategoryIdChange("2") },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            // 2. Nama Barang
-            DesignTextField(
-                value = nameOfProduct,
-                onValueChange = onNameChange,
-                label = "Nama Barang",
-                placeholder = "Contoh: Bor Listrik",
-                icon = Icons.Outlined.Inventory2
-            )
-
-            // 3. Foto Barang (Clickable Box)
-            Column {
-                Text("Foto Barang", fontWeight = FontWeight.Medium, color = TextDark, fontSize = 14.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(160.dp)
-                        .border(
-                            width = 2.dp,
-                            color = BorderGray,
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFF9FAFB))
-                        .clickable { onImageClick() }, // Triggers Photo Picker
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (selectedImageUri != null) {
-                        // Display the selected image
-                        AsyncImage(
-                            model = selectedImageUri,
-                            contentDescription = "Selected Image",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        // Placeholder UI
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                imageVector = Icons.Outlined.CameraAlt,
-                                contentDescription = null,
-                                tint = BrandTeal,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Tambah Foto", color = BrandTeal, fontWeight = FontWeight.Medium)
-                        }
-                    }
-                }
-            }
-
-            // 4. Deskripsi
-            Column {
-                Text("Deskripsi", fontWeight = FontWeight.Medium, color = TextDark, fontSize = 14.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = onDescriptionChange,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp),
-                    placeholder = { Text("Jelaskan detail barang...", color = TextGray) },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = BrandTeal,
-                        unfocusedBorderColor = BorderGray,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
+            // --- Section 1: Kategori ---
+            Text("Kategori", fontWeight = FontWeight.Bold, color = TextDark)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                CategoryToggle(
+                    text = "Barang",
+                    icon = Icons.Outlined.Inventory2,
+                    isSelected = viewModel.categoryIdInput == "1",
+                    onClick = { viewModel.categoryIdInput = "1" }
+                )
+                CategoryToggle(
+                    text = "Jasa",
+                    icon = Icons.Outlined.Build,
+                    isSelected = viewModel.categoryIdInput == "2",
+                    onClick = { viewModel.categoryIdInput = "2" }
                 )
             }
 
-            // 5. Exchange
-            DesignTextField(
-                value = exchangeProductName,
-                onValueChange = onExchangeProductChange,
-                label = "Mau ditukar dengan apa?",
-                placeholder = "Contoh: Uang / Beras / Jasa",
-                icon = Icons.Outlined.Handshake
+            // --- Section 2: Foto ---
+            SectionLabel("Foto")
+            PhotoUploadBox(
+                uri = viewModel.selectedImageUri,
+                onClick = onImageClick
             )
 
-            // 6. Lokasi
-            DesignTextField(
-                value = location,
-                onValueChange = onLocationChange,
-                label = "Lokasi Anda",
+            // --- Section 3: Nama Barang/Jasa ---
+            SectionLabel("Nama Barang/Jasa")
+            StyledTextField(
+                value = viewModel.nameOfProduct,
+                onValueChange = { viewModel.nameOfProduct = it },
+                placeholder = "Contoh: Sepatu Converse Ukuran 42"
+            )
+
+            // --- Section 4: Deskripsi ---
+            SectionLabel("Deskripsi")
+            StyledTextField(
+                value = viewModel.description,
+                onValueChange = { viewModel.description = it },
+                placeholder = "Jelaskan kondisi dan detail barang atau jasa...",
+                singleLine = false,
+                minLines = 4
+            )
+
+            // --- Section 5: Mau ditukar dengan apa? ---
+            SectionLabel("Mau ditukar dengan apa?")
+            StyledTextField(
+                value = viewModel.exchangeProductName,
+                onValueChange = { viewModel.exchangeProductName = it },
+                placeholder = "Contoh: Mencari sepatu olahraga Nike...",
+                singleLine = false,
+                minLines = 3,
+                borderColor = BrandCyan // Teal Border
+            )
+
+            // --- Section 6: Lokasi ---
+            SectionLabel("Lokasi")
+            StyledTextField(
+                value = viewModel.location,
+                onValueChange = { viewModel.location = it },
                 placeholder = "Contoh: Jakarta Barat",
                 icon = Icons.Default.LocationOn
             )
 
-            // 7. Contact Info (NEW)
-            HorizontalDivider(thickness = 1.dp, color = BorderGray)
-
-            Text("Kontak", fontWeight = FontWeight.Bold, color = TextDark, fontSize = 16.sp)
-
-            DesignTextField(
-                value = contactPhone,
-                onValueChange = onPhoneChange,
-                label = "Nomor WhatsApp",
-                placeholder = "08xx xxxx xxxx",
-                icon = Icons.Outlined.Phone,
-                keyboardType = KeyboardType.Phone
-            )
-
-            DesignTextField(
-                value = contactEmail,
-                onValueChange = onEmailChange,
-                label = "Email (Opsional)",
-                placeholder = "email@contoh.com",
-                icon = Icons.Outlined.Email,
-                keyboardType = KeyboardType.Email
-            )
+            // --- Section 7: Info Kontak ---
+            Spacer(modifier = Modifier.height(8.dp))
+            ContactInfoCard(viewModel)
 
             Spacer(modifier = Modifier.height(20.dp))
         }
@@ -351,95 +217,179 @@ fun CreateHelpRequestContent(
 // --- Helper Components ---
 
 @Composable
-fun CategoryButton(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val containerColor = if (isSelected) BrandTeal else Color.White
-    val contentColor = if (isSelected) Color.White else TextGray
-    val borderColor = if (isSelected) BrandTeal else BorderGray
+fun SectionLabel(text: String) {
+    Text(text, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextDark, modifier = Modifier.padding(bottom = 8.dp))
+}
 
-    Box(
-        modifier = modifier
-            .height(48.dp)
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .background(containerColor, RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp))
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
+@Composable
+fun CategoryToggle(text: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
+    val bgColor = if (isSelected) BrandCoral else Color.Transparent
+    val contentColor = if (isSelected) Color.White else TextDark
+    val border = if (isSelected) null else BorderStroke(1.dp, BorderGray)
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = bgColor,
+        border = border,
+        modifier = Modifier.height(40.dp)
     ) {
-        Text(text = text, fontWeight = FontWeight.SemiBold, color = contentColor)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            Icon(icon, null, tint = contentColor, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text, color = contentColor, fontWeight = FontWeight.SemiBold)
+        }
     }
 }
 
 @Composable
-fun DesignTextField(
+fun PhotoUploadBox(uri: Uri?, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(160.dp)
+            .border(1.dp, BorderGray, RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFFF9FAFB))
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        if (uri != null) {
+            AsyncImage(
+                model = uri,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.CameraAlt, null, tint = TextLight, modifier = Modifier.size(32.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Tambah Foto", color = TextLight, fontSize = 14.sp)
+            }
+        }
+    }
+}
+
+@Composable
+fun StyledTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    borderColor: Color = BorderGray,
+    icon: ImageVector? = null,
+    keyboardType: KeyboardType = KeyboardType.Text
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text(placeholder, color = TextLight) },
+        shape = RoundedCornerShape(8.dp),
+        minLines = minLines,
+        singleLine = singleLine,
+        leadingIcon = if (icon != null) { { Icon(icon, null, tint = TextLight) } } else null,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = borderColor,
+            unfocusedBorderColor = borderColor,
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White,
+            cursorColor = TextDark
+        )
+    )
+}
+
+@Composable
+fun ContactInfoCard(viewModel: CreateHelpRequestViewModel) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = BackgroundCream),
+        border = BorderStroke(2.dp, BrandCoral)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Person, null, tint = BrandCoral)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Info Kontak", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = BrandCoral)
+            }
+
+            // Toggles
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Inactive Button
+                OutlinedButton(
+                    onClick = { viewModel.loadProfileData() },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, BorderGray)
+                ) {
+                    Icon(Icons.Default.AccountCircle, null, tint = IconGray)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Gunakan Info Profil", color = IconGray)
+                }
+
+                // Active Button
+                Button(
+                    onClick = {},
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEFE9)),
+                    border = BorderStroke(2.dp, BrandCoral),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Icon(Icons.Default.CheckCircle, null, tint = BrandCoral)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Edit Info Kontak", color = BrandCoral)
+                }
+            }
+
+            // Fields
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                ContactField(viewModel.contactName, { viewModel.contactName = it }, "Nama Kontak", "Misal: Pak Budi", null)
+                ContactField(viewModel.contactPhone, { viewModel.contactPhone = it }, "Nomor WhatsApp", "08xx xxxx xxxx", Icons.Default.Phone, BrandCyan, KeyboardType.Phone)
+                ContactField(viewModel.contactEmail, { viewModel.contactEmail = it }, "Email (Opsional)", "email@contoh.com", Icons.Default.Email, IconGray, KeyboardType.Email)
+            }
+        }
+    }
+}
+
+@Composable
+fun ContactField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
     placeholder: String,
-    icon: ImageVector,
+    icon: ImageVector?,
+    iconColor: Color = TextDark,
     keyboardType: KeyboardType = KeyboardType.Text
 ) {
     Column {
-        Text(label, fontWeight = FontWeight.Medium, color = TextDark, fontSize = 14.sp)
-        Spacer(modifier = Modifier.height(8.dp))
+        Text(label, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextDark, modifier = Modifier.padding(bottom = 8.dp))
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(placeholder, color = TextGray) },
-            leadingIcon = {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = if(value.isNotEmpty()) BrandTeal else TextGray
-                )
-            },
-            shape = RoundedCornerShape(12.dp),
+            placeholder = { Text(placeholder, color = TextLight, fontSize = 14.sp) },
+            leadingIcon = if (icon != null) { { Icon(icon, null, tint = iconColor) } } else null,
+            shape = RoundedCornerShape(8.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = BrandTeal,
-                unfocusedBorderColor = BorderGray,
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White,
-                cursorColor = BrandTeal
+                focusedBorderColor = if(icon == Icons.Default.Phone) BrandCyan else BorderGray,
+                unfocusedBorderColor = BorderGray
             ),
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             singleLine = true
         )
     }
-}
-
-fun Modifier.alpha(alpha: Float) = this.then(Modifier.drawWithContent {
-    if (alpha > 0) drawContent()
-})
-
-// --- Previews ---
-@Preview(showBackground = true, heightDp = 1000)
-@Composable
-fun CreateHelpRequestPreview() {
-    CreateHelpRequestContent(
-        modifier = Modifier.fillMaxSize(),
-        nameOfProduct = "",
-        onNameChange = {},
-        location = "",
-        onLocationChange = {},
-        categoryIdInput = "1",
-        onCategoryIdChange = {},
-        exchangeProductName = "",
-        onExchangeProductChange = {},
-        selectedImageUri = null,
-        onImageClick = {},
-        description = "",
-        onDescriptionChange = {},
-        contactPhone = "",
-        onPhoneChange = {},
-        contactEmail = "",
-        onEmailChange = {},
-        dataStatus = CreateExchangeUIState.Idle,
-        onSubmit = {},
-        onClose = {}
-    )
 }

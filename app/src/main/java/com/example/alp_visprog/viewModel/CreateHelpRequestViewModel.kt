@@ -24,43 +24,43 @@ import retrofit2.Response
 
 class CreateHelpRequestViewModel(
     private val helpRequestRepository: HelpRequestRepository,
-    private val userRepository: UserRepositoryInterface // [1] Injected Dependency
+    private val userRepository: UserRepositoryInterface
 ) : ViewModel() {
 
-    // --- Form Inputs ---
+    // --- Form Inputs (Strictly matching DB) ---
+    var categoryIdInput by mutableStateOf("1") // 1 = Barang, 2 = Jasa
     var nameOfProduct by mutableStateOf("")
     var description by mutableStateOf("")
-    var exchangeProductName by mutableStateOf("")
+    var exchangeProductName by mutableStateOf("") // "Mau ditukar dengan apa?"
     var location by mutableStateOf("")
 
-    // Contact Fields
+    // --- Contact Fields ---
+    var contactName by mutableStateOf("") // For UI display only (derived from User)
     var contactPhone by mutableStateOf("")
     var contactEmail by mutableStateOf("")
 
-    // Image Handling
+    // --- Image Handling ---
     var selectedImageUri by mutableStateOf<Uri?>(null)
-    var imageUrl by mutableStateOf("")
-
-    // Category (Default to 1 = Barang)
-    var categoryIdInput by mutableStateOf("1")
+    var imageUrl by mutableStateOf("") // For the single image URL string
 
     // UI State
     private val _dataStatus = MutableStateFlow<CreateExchangeUIState>(CreateExchangeUIState.Idle)
     val dataStatus: StateFlow<CreateExchangeUIState> = _dataStatus.asStateFlow()
 
-    // [2] Init Block: Load User Profile Data automatically when ViewModel is created
+    // Load profile data on init
     init {
-        loadUserProfile()
+        loadProfileData()
     }
 
-    private fun loadUserProfile() {
+    fun loadProfileData() {
         viewModelScope.launch {
-            // [3] Collect the email flow from Repository
+            userRepository.currentUsername.collect { username ->
+                if (username != "Unknown" && contactName.isEmpty()) contactName = username
+            }
+        }
+        viewModelScope.launch {
             userRepository.currentUserEmail.collect { email ->
-                // Only pre-fill if field is empty and we have a valid email
-                if (contactEmail.isEmpty() && email.isNotEmpty() && email != "Unknown") {
-                    contactEmail = email
-                }
+                if (email.isNotEmpty() && contactEmail.isEmpty()) contactEmail = email
             }
         }
     }
@@ -76,22 +76,21 @@ class CreateHelpRequestViewModel(
         exchangeProductName = ""
         location = ""
         contactPhone = ""
-        // We clear email, but re-loading profile will pre-fill it again if saved
         contactEmail = ""
+        contactName = ""
+        loadProfileData()
         selectedImageUri = null
-        imageUrl = ""
-
-        loadUserProfile() // Re-fetch default data
     }
 
     fun submitHelpRequest() {
         if (nameOfProduct.isBlank() || description.isBlank() || contactPhone.isBlank()) {
-            _dataStatus.value = CreateExchangeUIState.Error("Please fill in required fields (Name, Desc, Phone).")
+            _dataStatus.value = CreateExchangeUIState.Error("Please fill in required fields.")
             return
         }
 
         _dataStatus.value = CreateExchangeUIState.Loading
 
+        // In real app: Upload selectedImageUri to server -> get URL -> set to finalImageUrl
         val finalImageUrl = selectedImageUri?.toString() ?: ""
 
         val requestCall = helpRequestRepository.createHelpRequest(
@@ -101,7 +100,7 @@ class CreateHelpRequestViewModel(
             location = location,
             imageUrl = finalImageUrl,
             categoryId = categoryIdInput.toIntOrNull() ?: 1,
-            userId = 1, // TODO: Replace with actual User ID if available
+            userId = 1, // TODO: Replace with actual User ID
             contactPhone = contactPhone,
             contactEmail = contactEmail
         )
@@ -114,7 +113,6 @@ class CreateHelpRequestViewModel(
                     _dataStatus.value = CreateExchangeUIState.Error("Failed: ${response.message()}")
                 }
             }
-
             override fun onFailure(call: Call<CreateHelpRequestResponse>, t: Throwable) {
                 _dataStatus.value = CreateExchangeUIState.Error("Error: ${t.localizedMessage}")
             }
@@ -127,7 +125,7 @@ class CreateHelpRequestViewModel(
                 val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as App)
                 CreateHelpRequestViewModel(
                     application.container.helpRequestRepository,
-                    application.container.userRepository // [4] Pass UserRepository here
+                    application.container.userRepository
                 )
             }
         }
