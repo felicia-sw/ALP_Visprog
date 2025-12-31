@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import com.example.alp_visprog.Application
+//import com.example.alp_visprog.Application
 import com.example.alp_visprog.R
 import com.example.alp_visprog.repositories.AuthenticationRepositoryInterface
 import kotlinx.coroutines.launch
@@ -226,6 +226,7 @@ class AuthenticationViewModel(
         viewModelScope.launch {
             userRepository.saveUserToken(token)
             userRepository.saveUsername(username)
+            userRepository.saveUserEmail(emailInput) // - saving the input email
         }
     }
 
