@@ -1,6 +1,6 @@
 package com.example.alp_visprog.models
 
-// 1. Request Body (Matches your backend CreateHelpRequest)
+// Request Body: Matches your backend's "CreateHelpRequest" interface
 data class CreateHelpRequest(
     val nameOfProduct: String,
     val description: String,
@@ -8,10 +8,13 @@ data class CreateHelpRequest(
     val location: String,
     val imageUrl: String,
     val categoryId: Int,
-    val userId: Int
+    val userId: Int,
+    // --- NEW FIELDS ---
+    val contactPhone: String,
+    val contactEmail: String
 )
 
-// 2. Response Body (Matches your backend HelpRequestResponse)
+// Response Body: Matches your backend's "HelpRequestResponse"
 data class HelpRequestModel(
     val id: Int,
     val nameOfProduct: String,
@@ -21,10 +24,13 @@ data class HelpRequestModel(
     val imageUrl: String,
     val isCheckout: Boolean,
     val userId: Int,
-    val categoryId: Int
+    val categoryId: Int,
+    // --- NEW FIELDS ---
+    val contactPhone: String,
+    val contactEmail: String?
 )
 
-// 3. API Response Wrapper
+// API Response Wrappers
 data class CreateHelpRequestResponse(
     val data: HelpRequestModel
 )

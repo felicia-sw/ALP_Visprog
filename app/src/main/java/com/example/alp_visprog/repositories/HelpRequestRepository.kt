@@ -20,8 +20,12 @@ class HelpRequestRepository(
         location: String,
         imageUrl: String,
         categoryId: Int,
-        userId: Int
+        userId: Int,
+        // --- NEW PARAMETERS ---
+        contactPhone: String,
+        contactEmail: String
     ): Call<CreateHelpRequestResponse> {
+
         val request = CreateHelpRequest(
             nameOfProduct = nameOfProduct,
             description = description,
@@ -29,8 +33,12 @@ class HelpRequestRepository(
             location = location,
             imageUrl = imageUrl,
             categoryId = categoryId,
-            userId = userId
+            userId = userId,
+            // --- PASS THEM HERE ---
+            contactPhone = contactPhone,
+            contactEmail = contactEmail
         )
+
         return helpRequestAPIService.createHelpRequest(request)
     }
 }

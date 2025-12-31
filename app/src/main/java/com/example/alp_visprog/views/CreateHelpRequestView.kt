@@ -1,6 +1,10 @@
 package com.example.alp_visprog.views
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,9 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.Handshake
-import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -30,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.alp_visprog.uiStates.CreateExchangeUIState
 import com.example.alp_visprog.viewModel.CreateHelpRequestViewModel
 
@@ -48,6 +52,13 @@ fun CreateHelpRequestView(
     val dataStatus by viewModel.dataStatus.collectAsState()
     val context = LocalContext.current
 
+    // 1. Image Picker Launcher
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri -> viewModel.selectedImageUri = uri }
+    )
+
+    // 2. Handle Status (Success/Error)
     LaunchedEffect(dataStatus) {
         when (val status = dataStatus) {
             is CreateExchangeUIState.Error -> {
@@ -63,11 +74,14 @@ fun CreateHelpRequestView(
         }
     }
 
+    // 3. Render Content
     CreateHelpRequestContent(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.95f) // Bottom Sheet Height
-            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)), // Rounded Top
+            .fillMaxHeight(0.95f) // Bottom sheet height
+            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+
+        // Data Passing
         nameOfProduct = viewModel.nameOfProduct,
         onNameChange = { viewModel.nameOfProduct = it },
         location = viewModel.location,
@@ -76,10 +90,24 @@ fun CreateHelpRequestView(
         onCategoryIdChange = { viewModel.categoryIdInput = it },
         exchangeProductName = viewModel.exchangeProductName,
         onExchangeProductChange = { viewModel.exchangeProductName = it },
-        imageUrl = viewModel.imageUrl,
-        onImageUrlChange = { viewModel.imageUrl = it },
+
+        // Image Logic
+        selectedImageUri = viewModel.selectedImageUri,
+        onImageClick = {
+            photoPickerLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        },
+
         description = viewModel.description,
         onDescriptionChange = { viewModel.description = it },
+
+        // Contact Data
+        contactPhone = viewModel.contactPhone,
+        onPhoneChange = { viewModel.contactPhone = it },
+        contactEmail = viewModel.contactEmail,
+        onEmailChange = { viewModel.contactEmail = it },
+
         dataStatus = dataStatus,
         onSubmit = { viewModel.submitHelpRequest() },
         onClose = onBackClick
@@ -98,15 +126,18 @@ fun CreateHelpRequestContent(
     onCategoryIdChange: (String) -> Unit,
     exchangeProductName: String,
     onExchangeProductChange: (String) -> Unit,
-    imageUrl: String,
-    onImageUrlChange: (String) -> Unit,
+    selectedImageUri: Uri?,
+    onImageClick: () -> Unit,
     description: String,
     onDescriptionChange: (String) -> Unit,
+    contactPhone: String,
+    onPhoneChange: (String) -> Unit,
+    contactEmail: String,
+    onEmailChange: (String) -> Unit,
     dataStatus: CreateExchangeUIState,
     onSubmit: () -> Unit,
     onClose: () -> Unit
 ) {
-    // We use Scaffold inside the Box/Column to handle Fixed Header + Fixed Footer + Scrollable Body automatically
     Scaffold(
         modifier = modifier,
         containerColor = Color.White,
@@ -173,7 +204,7 @@ fun CreateHelpRequestContent(
         // Scrollable Form Content
         Column(
             modifier = Modifier
-                .padding(paddingValues) // Respects topBar and bottomBar space
+                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -185,7 +216,7 @@ fun CreateHelpRequestContent(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     CategoryButton(
                         text = "Barang",
-                        isSelected = categoryIdInput == "1" || categoryIdInput.isEmpty(),
+                        isSelected = categoryIdInput == "1",
                         onClick = { onCategoryIdChange("1") },
                         modifier = Modifier.weight(1f)
                     )
@@ -207,7 +238,7 @@ fun CreateHelpRequestContent(
                 icon = Icons.Outlined.Inventory2
             )
 
-            // 3. Foto Barang
+            // 3. Foto Barang (Clickable Box)
             Column {
                 Text("Foto Barang", fontWeight = FontWeight.Medium, color = TextDark, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -215,17 +246,27 @@ fun CreateHelpRequestContent(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp)
+                        .height(160.dp)
                         .border(
                             width = 2.dp,
                             color = BorderGray,
                             shape = RoundedCornerShape(12.dp)
                         )
-                        .background(Color(0xFFF9FAFB), RoundedCornerShape(12.dp))
-                        .padding(16.dp),
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFF9FAFB))
+                        .clickable { onImageClick() }, // Triggers Photo Picker
                     contentAlignment = Alignment.Center
                 ) {
-                    if (imageUrl.isEmpty()) {
+                    if (selectedImageUri != null) {
+                        // Display the selected image
+                        AsyncImage(
+                            model = selectedImageUri,
+                            contentDescription = "Selected Image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        // Placeholder UI
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
                                 imageVector = Icons.Outlined.CameraAlt,
@@ -234,25 +275,8 @@ fun CreateHelpRequestContent(
                                 modifier = Modifier.size(32.dp)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Tambah URL Foto", color = BrandTeal, fontWeight = FontWeight.Medium)
+                            Text("Tambah Foto", color = BrandTeal, fontWeight = FontWeight.Medium)
                         }
-                        TextField(
-                            value = imageUrl,
-                            onValueChange = onImageUrlChange,
-                            modifier = Modifier.fillMaxSize().alpha(0f),
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent
-                            )
-                        )
-                    } else {
-                        OutlinedTextField(
-                            value = imageUrl,
-                            onValueChange = onImageUrlChange,
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("URL Foto") },
-                            singleLine = true
-                        )
                     }
                 }
             }
@@ -283,7 +307,7 @@ fun CreateHelpRequestContent(
                 value = exchangeProductName,
                 onValueChange = onExchangeProductChange,
                 label = "Mau ditukar dengan apa?",
-                placeholder = "Contoh: Uang / Beras",
+                placeholder = "Contoh: Uang / Beras / Jasa",
                 icon = Icons.Outlined.Handshake
             )
 
@@ -296,13 +320,36 @@ fun CreateHelpRequestContent(
                 icon = Icons.Default.LocationOn
             )
 
-            // Extra space at the bottom to ensure nothing is hidden behind the footer (Scaffold handles this, but good for safety)
+            // 7. Contact Info (NEW)
+            HorizontalDivider(thickness = 1.dp, color = BorderGray)
+
+            Text("Kontak", fontWeight = FontWeight.Bold, color = TextDark, fontSize = 16.sp)
+
+            DesignTextField(
+                value = contactPhone,
+                onValueChange = onPhoneChange,
+                label = "Nomor WhatsApp",
+                placeholder = "08xx xxxx xxxx",
+                icon = Icons.Outlined.Phone,
+                keyboardType = KeyboardType.Phone
+            )
+
+            DesignTextField(
+                value = contactEmail,
+                onValueChange = onEmailChange,
+                label = "Email (Opsional)",
+                placeholder = "email@contoh.com",
+                icon = Icons.Outlined.Email,
+                keyboardType = KeyboardType.Email
+            )
+
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
 
 // --- Helper Components ---
+
 @Composable
 fun CategoryButton(
     text: String,
@@ -345,7 +392,11 @@ fun DesignTextField(
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text(placeholder, color = TextGray) },
             leadingIcon = {
-                Icon(imageVector = icon, contentDescription = null, tint = if(value.isNotEmpty()) BrandTeal else TextGray)
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if(value.isNotEmpty()) BrandTeal else TextGray
+                )
             },
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -366,11 +417,9 @@ fun Modifier.alpha(alpha: Float) = this.then(Modifier.drawWithContent {
 })
 
 // --- Previews ---
-
-// This Preview uses a short height (600dp) to FORCE scrolling so you can test it
-@Preview(showBackground = true, heightDp = 600, name = "Short Device (Scrollable)")
+@Preview(showBackground = true, heightDp = 1000)
 @Composable
-fun CreateHelpRequestScrollPreview() {
+fun CreateHelpRequestPreview() {
     CreateHelpRequestContent(
         modifier = Modifier.fillMaxSize(),
         nameOfProduct = "",
@@ -381,34 +430,14 @@ fun CreateHelpRequestScrollPreview() {
         onCategoryIdChange = {},
         exchangeProductName = "",
         onExchangeProductChange = {},
-        imageUrl = "",
-        onImageUrlChange = {},
+        selectedImageUri = null,
+        onImageClick = {},
         description = "",
         onDescriptionChange = {},
-        dataStatus = CreateExchangeUIState.Idle,
-        onSubmit = {},
-        onClose = {}
-    )
-}
-
-// This Preview shows the full layout extended
-@Preview(showBackground = true, heightDp = 1000, name = "Full Layout (Static)")
-@Composable
-fun CreateHelpRequestFullPreview() {
-    CreateHelpRequestContent(
-        modifier = Modifier.fillMaxSize(),
-        nameOfProduct = "Bor Listrik",
-        onNameChange = {},
-        location = "Jakarta",
-        onLocationChange = {},
-        categoryIdInput = "1",
-        onCategoryIdChange = {},
-        exchangeProductName = "Uang",
-        onExchangeProductChange = {},
-        imageUrl = "",
-        onImageUrlChange = {},
-        description = "Deskripsi...",
-        onDescriptionChange = {},
+        contactPhone = "",
+        onPhoneChange = {},
+        contactEmail = "",
+        onEmailChange = {},
         dataStatus = CreateExchangeUIState.Idle,
         onSubmit = {},
         onClose = {}

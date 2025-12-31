@@ -1,5 +1,6 @@
 package com.example.alp_visprog.viewModel
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -22,13 +23,22 @@ class CreateHelpRequestViewModel(
     private val helpRequestRepository: HelpRequestRepository
 ) : ViewModel() {
 
-    // Form Data
+    // --- Form Inputs ---
     var nameOfProduct by mutableStateOf("")
     var description by mutableStateOf("")
     var exchangeProductName by mutableStateOf("")
     var location by mutableStateOf("")
+
+    // NEW: Contact Fields
+    var contactPhone by mutableStateOf("")
+    var contactEmail by mutableStateOf("")
+
+    // Image Handling
+    var selectedImageUri by mutableStateOf<Uri?>(null)
     var imageUrl by mutableStateOf("")
-    var categoryIdInput by mutableStateOf("") // Keeping as String for input handling
+
+    // Category (Default to 1 = Barang)
+    var categoryIdInput by mutableStateOf("1")
 
     // UI State
     private val _dataStatus = MutableStateFlow<CreateExchangeUIState>(CreateExchangeUIState.Idle)
@@ -44,40 +54,40 @@ class CreateHelpRequestViewModel(
         description = ""
         exchangeProductName = ""
         location = ""
+        contactPhone = ""
+        contactEmail = ""
+        selectedImageUri = null
         imageUrl = ""
-        categoryIdInput = ""
     }
 
     fun submitHelpRequest() {
-        // 1. Validate Basic Fields
-        if (nameOfProduct.isBlank() || description.isBlank() || location.isBlank() || exchangeProductName.isBlank()) {
-            _dataStatus.value = CreateExchangeUIState.Error("Please fill in all required fields.")
-            return
-        }
-
-        // 2. Validate Category ID
-        val catId = categoryIdInput.toIntOrNull()
-        if (catId == null) {
-            _dataStatus.value = CreateExchangeUIState.Error("Category ID must be a valid number.")
+        // 1. Basic Validation
+        if (nameOfProduct.isBlank() || description.isBlank() || contactPhone.isBlank()) {
+            _dataStatus.value = CreateExchangeUIState.Error("Please fill in required fields (Name, Desc, Phone).")
             return
         }
 
         _dataStatus.value = CreateExchangeUIState.Loading
 
-        // TODO: Replace '1' with actual logged-in User ID from DataStore/UserContext
-        val currentUserId = 1
+        // 2. Prepare Image URL
+        // In a real app, upload 'selectedImageUri' to a server first.
+        // For now, we send the URI string as a placeholder.
+        val finalImageUrl = selectedImageUri?.toString() ?: ""
 
-        val call = helpRequestRepository.createHelpRequest(
+        // 3. Call Repository with NEW fields
+        val requestCall = helpRequestRepository.createHelpRequest(
             nameOfProduct = nameOfProduct,
             description = description,
             exchangeProductName = exchangeProductName,
             location = location,
-            imageUrl = imageUrl,
-            categoryId = catId,
-            userId = currentUserId
+            imageUrl = finalImageUrl,
+            categoryId = categoryIdInput.toIntOrNull() ?: 1,
+            userId = 1, // TODO: Replace with logged-in User ID
+            contactPhone = contactPhone, // Passing Phone
+            contactEmail = contactEmail  // Passing Email
         )
 
-        call.enqueue(object : Callback<CreateHelpRequestResponse> {
+        requestCall.enqueue(object : Callback<CreateHelpRequestResponse> {
             override fun onResponse(call: Call<CreateHelpRequestResponse>, response: Response<CreateHelpRequestResponse>) {
                 if (response.isSuccessful) {
                     _dataStatus.value = CreateExchangeUIState.Success
@@ -87,7 +97,7 @@ class CreateHelpRequestViewModel(
             }
 
             override fun onFailure(call: Call<CreateHelpRequestResponse>, t: Throwable) {
-                _dataStatus.value = CreateExchangeUIState.Error(t.message ?: "Unknown Error")
+                _dataStatus.value = CreateExchangeUIState.Error("Error: ${t.localizedMessage}")
             }
         })
     }
@@ -96,9 +106,7 @@ class CreateHelpRequestViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as App)
-                CreateHelpRequestViewModel(
-                    application.container.helpRequestRepository
-                )
+                CreateHelpRequestViewModel(application.container.helpRequestRepository)
             }
         }
     }
