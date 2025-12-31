@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import android.util.Patterns
 
 class CreateHelpRequestViewModel(
     private val helpRequestRepository: HelpRequestRepository,
@@ -83,14 +84,22 @@ class CreateHelpRequestViewModel(
     }
 
     fun submitHelpRequest() {
+        // 1. Check Required Fields
         if (nameOfProduct.isBlank() || description.isBlank() || contactPhone.isBlank()) {
             _dataStatus.value = CreateExchangeUIState.Error("Please fill in required fields.")
             return
         }
 
+        // 2. Check Email Validity (The Fix)
+        // We only check if it is NOT empty. If it's empty, we allow it (optional).
+        // If it has text, it MUST match the email pattern.
+        if (contactEmail.isNotEmpty() && !Patterns.EMAIL_ADDRESS.matcher(contactEmail).matches()) {
+            _dataStatus.value = CreateExchangeUIState.Error("Invalid email")
+            return
+        }
+
         _dataStatus.value = CreateExchangeUIState.Loading
 
-        // In real app: Upload selectedImageUri to server -> get URL -> set to finalImageUrl
         val finalImageUrl = selectedImageUri?.toString() ?: ""
 
         val requestCall = helpRequestRepository.createHelpRequest(
@@ -100,7 +109,7 @@ class CreateHelpRequestViewModel(
             location = location,
             imageUrl = finalImageUrl,
             categoryId = categoryIdInput.toIntOrNull() ?: 1,
-            userId = 1, // TODO: Replace with actual User ID
+            userId = 1,
             contactPhone = contactPhone,
             contactEmail = contactEmail
         )
@@ -110,6 +119,7 @@ class CreateHelpRequestViewModel(
                 if (response.isSuccessful) {
                     _dataStatus.value = CreateExchangeUIState.Success
                 } else {
+                    // Fallback: If backend sends a specific error, show it
                     _dataStatus.value = CreateExchangeUIState.Error("Failed: ${response.message()}")
                 }
             }
