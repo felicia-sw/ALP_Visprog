@@ -6,11 +6,13 @@ import com.example.alp_visprog.repositories.AuthenticationRepository
 import com.example.alp_visprog.repositories.AuthenticationRepositoryInterface
 import com.example.alp_visprog.repositories.ExchangeRepository
 import com.example.alp_visprog.repositories.HelpRequestRepository // Import this
+import com.example.alp_visprog.repositories.ShoppingCartRepository
 import com.example.alp_visprog.repositories.UserRepository
 import com.example.alp_visprog.repositories.UserRepositoryInterface
 import com.example.alp_visprog.services.AuthenticationAPIService
 import com.example.alp_visprog.services.ExchangeAPIService
 import com.example.alp_visprog.services.HelpRequestAPIService // Import this
+import com.example.alp_visprog.services.ShoppingCartAPIService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -67,6 +69,10 @@ class AppContainer(
     private val helpRequestAPIService: HelpRequestAPIService by lazy {
         retrofit.create(HelpRequestAPIService::class.java)
     }
+    // 1. Initialize API Service
+    private val shoppingCartAPIService: ShoppingCartAPIService by lazy {
+        retrofit.create(ShoppingCartAPIService::class.java)
+    }
 
     // --- REPOSITORIES ---
 
@@ -85,5 +91,10 @@ class AppContainer(
     // NEW: HelpRequest Repository
     override val helpRequestRepository: HelpRequestRepository by lazy {
         HelpRequestRepository(helpRequestAPIService)
+    }
+
+    // 2. Initialize Repository (Add this property)
+    val shoppingCartRepository: ShoppingCartRepository by lazy {
+        ShoppingCartRepository(shoppingCartAPIService)
     }
 }
