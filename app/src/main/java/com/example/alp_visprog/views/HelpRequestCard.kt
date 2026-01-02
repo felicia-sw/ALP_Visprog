@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material3.*
@@ -95,30 +94,7 @@ fun HelpRequestCard(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(Icons.Outlined.AccessTime, null, modifier = Modifier.size(12.dp), tint = Color.Gray)
-                        Text(
-                            text = " Baru saja",
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                            maxLines = 1
-                        )
                     }
-                }
-
-                // 3. Stock Badge
-                Surface(
-                    color = BrandTeal,
-                    shape = RoundedCornerShape(50),
-                    modifier = Modifier.align(Alignment.Top)
-                ) {
-                    Text(
-                        text = "Stok: 1", // Placeholder
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
                 }
             }
 
@@ -258,7 +234,6 @@ fun HelpRequestCard(
     }
 }
 
-// ... (Your HelpRequestCard code above)
 
 @Preview(showBackground = true, backgroundColor = 0xFFF5F5F5)
 @Composable
