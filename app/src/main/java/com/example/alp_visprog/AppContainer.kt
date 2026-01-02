@@ -7,12 +7,16 @@ import com.example.alp_visprog.repositories.AuthenticationRepositoryInterface
 import com.example.alp_visprog.repositories.ExchangeRepository
 import com.example.alp_visprog.repositories.HelpRequestRepository // Import this
 import com.example.alp_visprog.repositories.ShoppingCartRepository
+import com.example.alp_visprog.repositories.ProfileRepository
+import com.example.alp_visprog.repositories.ProfileRepositoryInterface
 import com.example.alp_visprog.repositories.UserRepository
 import com.example.alp_visprog.repositories.UserRepositoryInterface
 import com.example.alp_visprog.services.AuthenticationAPIService
 import com.example.alp_visprog.services.ExchangeAPIService
 import com.example.alp_visprog.services.HelpRequestAPIService // Import this
 import com.example.alp_visprog.services.ShoppingCartAPIService
+import com.example.alp_visprog.services.HelpRequestAPIService
+import com.example.alp_visprog.services.ProfileAPIService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -21,8 +25,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 interface AppContainerInterface {
     val authenticationRepository: AuthenticationRepositoryInterface
     val userRepository: UserRepositoryInterface
+    val profileRepository: ProfileRepositoryInterface
+    // exchange repository
     val exchangeRepository: ExchangeRepository
-    // Add this line so the ViewModel can access it:
+//    help request repository
     val helpRequestRepository: HelpRequestRepository
 }
 
@@ -74,7 +80,14 @@ class AppContainer(
         retrofit.create(ShoppingCartAPIService::class.java)
     }
 
-    // --- REPOSITORIES ---
+    // New: Profile Service (required by ProfileRepository)
+    private val profileAPIService: ProfileAPIService by lazy {
+        retrofit.create(ProfileAPIService::class.java)
+    }
+
+    // -------------------------------------------------------------
+    // 3. REPOSITORIES (Inject the services into them)
+    // -------------------------------------------------------------
 
     override val authenticationRepository: AuthenticationRepositoryInterface by lazy {
         AuthenticationRepository(authenticationRetrofitService)
@@ -96,5 +109,11 @@ class AppContainer(
     // 2. Initialize Repository (Add this property)
     val shoppingCartRepository: ShoppingCartRepository by lazy {
         ShoppingCartRepository(shoppingCartAPIService)
+    }
+    // Provide profileRepository as required by the interface
+    override val profileRepository: ProfileRepositoryInterface by lazy {
+        ProfileRepository(profileAPIService)
+    }
+
     }
 }

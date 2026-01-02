@@ -37,7 +37,7 @@ fun ExchangeCard(
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(15.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.SpaceBetween
