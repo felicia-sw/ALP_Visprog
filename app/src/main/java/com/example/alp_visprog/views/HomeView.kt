@@ -244,6 +244,25 @@ fun HomeContent(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         FilterChip(
+                            selected = selectedFilter == "ALL",
+                            onClick = {
+                                selectedFilter = "ALL"
+                                onFilterClick(null, null)
+                            },
+                            label = { Text("Semua") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.List,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = BrandOrange,
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                        FilterChip(
                             selected = selectedFilter == "BARANG",
                             onClick = {
                                 selectedFilter = "BARANG"
@@ -318,6 +337,10 @@ fun HomeContent(
                                     onContactSeller = {
                                         // Navigate to contact or detail page
                                         navController?.navigate("create_exchange/${helpRequest.id}")
+                                    },
+                                    onProfileClick = { userId ->
+                                        navController?.navigate("Profile")
+
                                     }
                                 )
                             }

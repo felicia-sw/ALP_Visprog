@@ -1,7 +1,6 @@
 package com.example.alp_visprog.ui.route
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -30,11 +29,11 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
-import com.example.alp_visprog.views.HomeView
 import androidx.navigation.navArgument
-import com.example.alp_visprog.views.CreateHelpRequestView // Import your new View
+import com.example.alp_visprog.views.CreateHelpRequestView
 import com.example.alp_visprog.views.ExchangeListView
 import com.example.alp_visprog.views.HomeView
+import com.example.alp_visprog.views.ProfileView
 import kotlinx.coroutines.launch
 
 enum class AppView(val title: String, val icon: ImageVector? = null) {
@@ -163,17 +162,6 @@ fun CustomBottomNavigationBar(
     }
 }
 
-@Composable
-fun ProfileScreen() {
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Text(
-            text = "Profile Screen",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(15.dp)
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview(showBackground = true, showSystemUi = true)
@@ -226,7 +214,7 @@ fun AppRouting() {
             // Note: We removed the "Create" composable route because it is now a BottomSheet
 
             composable(AppView.Profile.name) {
-                ProfileScreen()
+                ProfileView()
             }
 
             composable(

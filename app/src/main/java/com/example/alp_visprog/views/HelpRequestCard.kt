@@ -3,6 +3,7 @@ package com.example.alp_visprog.views
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,7 +37,8 @@ val TextDarkGray = Color(0xFF333333)
 fun HelpRequestCard(
     request: HelpRequestModel,
     onAddToCart: () -> Unit,
-    onContactSeller: () -> Unit
+    onContactSeller: () -> Unit,
+    onProfileClick: ((Int) -> Unit)? = null
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -53,7 +55,13 @@ fun HelpRequestCard(
         ) {
             // --- HEADER SECTION ---
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        println("DEBUG: Profile clicked in HelpRequestCard for userId: ${request.userId}")
+                        onProfileClick?.invoke(request.userId)
+                    }
+                    .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // 1. Seller Profile Image (Placeholder)
@@ -255,7 +263,8 @@ fun HelpRequestCardPreview() {
                 contactEmail = "siti@example.com"
             ),
             onAddToCart = {},
-            onContactSeller = {}
+            onContactSeller = {},
+            onProfileClick = {}
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -276,7 +285,8 @@ fun HelpRequestCardPreview() {
                 contactEmail = null
             ),
             onAddToCart = {},
-            onContactSeller = {}
+            onContactSeller = {},
+            onProfileClick = {}
         )
     }
 }
