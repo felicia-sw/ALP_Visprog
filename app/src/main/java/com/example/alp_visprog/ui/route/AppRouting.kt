@@ -220,7 +220,7 @@ fun AppRouting() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(AppView.Home.name) {
-                HomeView(navControlIer = navController)
+                HomeView(navController = navController)
             }
 
             // Note: We removed the "Create" composable route because it is now a BottomSheet

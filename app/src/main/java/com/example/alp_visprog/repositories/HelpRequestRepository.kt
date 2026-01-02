@@ -2,7 +2,6 @@ package com.example.alp_visprog.repositories
 
 import com.example.alp_visprog.models.CreateHelpRequest
 import com.example.alp_visprog.models.CreateHelpRequestResponse
-import com.example.alp_visprog.models.CreateHelpRequestRequest
 import com.example.alp_visprog.models.GeneralResponse
 import com.example.alp_visprog.models.GetAllHelpRequestsResponse
 import com.example.alp_visprog.services.HelpRequestAPIService

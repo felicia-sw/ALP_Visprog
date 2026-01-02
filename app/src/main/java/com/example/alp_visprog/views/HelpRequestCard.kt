@@ -3,7 +3,6 @@ package com.example.alp_visprog.views
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,7 +19,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -84,12 +82,27 @@ fun HelpRequestCard(
                         fontSize = 16.sp,
                         color = TextDarkGray
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Icon(Icons.Outlined.LocationOn, null, modifier = Modifier.size(12.dp), tint = Color.Gray)
-                        Text(" ${request.location}", fontSize = 12.sp, color = Color.Gray)
+                        Text(
+                            text = " ${request.location}",
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(Icons.Outlined.AccessTime, null, modifier = Modifier.size(12.dp), tint = Color.Gray)
-                        Text(" Baru saja", fontSize = 12.sp, color = Color.Gray)
+                        Text(
+                            text = " Baru saja",
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            maxLines = 1
+                        )
                     }
                 }
 

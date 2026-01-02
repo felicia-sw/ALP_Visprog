@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.alp_visprog.models.HelpRequestModel
 import com.example.alp_visprog.uiStates.HomeUIState
 import com.example.alp_visprog.viewModel.HomeViewModel
 import com.example.alp_visprog.ui.theme.BrandOrange
@@ -44,6 +43,7 @@ fun HomeView(
             state = HomeUIState.Loading,
             onRefresh = {},
             onFilterClick = { _, _ -> },
+            navController = navController,
             modifier = modifier
         )
         return
@@ -62,6 +62,7 @@ fun HomeView(
         state = state,
         onRefresh = { viewModel.loadHelpRequests() },
         onFilterClick = { type, status -> viewModel.filterHelpRequests(type, status) },
+        navController = navController,
         modifier = modifier
     )
 }
@@ -72,7 +73,8 @@ fun HomeContent(
     state: HomeUIState,
     onRefresh: () -> Unit,
     onFilterClick: (String?, String?) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navController: NavController? = null
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("ALL") }
@@ -308,91 +310,21 @@ fun HomeContent(
                             verticalArrangement = Arrangement.spacedBy(15.dp)
                         ) {
                             items(state.data) { helpRequest ->
-                                HelpRequestCard(helpRequest)
+                                HelpRequestCard(
+                                    request = helpRequest,
+                                    onAddToCart = {
+                                        // TODO: Add to cart functionality
+                                    },
+                                    onContactSeller = {
+                                        // Navigate to contact or detail page
+                                        navController?.navigate("create_exchange/${helpRequest.id}")
+                                    }
+                                )
                             }
                         }
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun HelpRequestCard(helpRequest: HelpRequestModel) {
-    // Render using the actual fields from backend: nameOfProduct, exchangeProductName, description, location, user
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
-        shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = helpRequest.nameOfProduct,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = helpRequest.user?.username ?: "Unknown User",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                }
-                Text(
-                    text = helpRequest.location,
-                    fontSize = 11.sp,
-                    color = Color.Gray
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = helpRequest.description,
-                fontSize = 13.sp,
-                color = Color.DarkGray,
-                modifier = Modifier.padding(horizontal = 10.dp)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Tukar dengan: ${helpRequest.exchangeProductName}",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = BrandOrange,
-                modifier = Modifier.padding(horizontal = 10.dp)
-            )
-            Button(
-                onClick = {
-                    // Navigate to "Reply to Post #1"
-                    navControlIer.navigate("create_exchange/1")
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF6C35))
-            ) {
-                Text("Test: Offer Help for Post #1")
-            }
-            // --- TEMP BUTTON TO TEST FEATURE ---
-            Button(
-                onClick = {
-                    // Navigate to the route we defined in AppRouting
-                    // We hardcode "1" for testing (representing Post ID #1)
-                    navControlIer.navigate("exchange_list/1")
-                }
-            ) {
-                Text(text = "See Offers for Post #1")
-            }
-
 
         }
 

@@ -5,7 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import com.example.alp_visprog.repositories.AuthenticationRepository
 import com.example.alp_visprog.repositories.AuthenticationRepositoryInterface
 import com.example.alp_visprog.repositories.ExchangeRepository
-import com.example.alp_visprog.repositories.HelpRequestRepository // Import this
+import com.example.alp_visprog.repositories.HelpRequestRepository
 import com.example.alp_visprog.repositories.ShoppingCartRepository
 import com.example.alp_visprog.repositories.ProfileRepository
 import com.example.alp_visprog.repositories.ProfileRepositoryInterface
@@ -13,9 +13,8 @@ import com.example.alp_visprog.repositories.UserRepository
 import com.example.alp_visprog.repositories.UserRepositoryInterface
 import com.example.alp_visprog.services.AuthenticationAPIService
 import com.example.alp_visprog.services.ExchangeAPIService
-import com.example.alp_visprog.services.HelpRequestAPIService // Import this
-import com.example.alp_visprog.services.ShoppingCartAPIService
 import com.example.alp_visprog.services.HelpRequestAPIService
+import com.example.alp_visprog.services.ShoppingCartAPIService
 import com.example.alp_visprog.services.ProfileAPIService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -115,5 +114,5 @@ class AppContainer(
         ProfileRepository(profileAPIService)
     }
 
-    }
+
 }
