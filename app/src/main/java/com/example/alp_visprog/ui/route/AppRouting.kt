@@ -11,9 +11,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,12 +32,16 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import com.example.alp_visprog.views.HomeView
 import androidx.navigation.navArgument
+import com.example.alp_visprog.views.CreateHelpRequestView // Import your new View
 import com.example.alp_visprog.views.ExchangeListView
+import com.example.alp_visprog.views.HomeView
+import kotlinx.coroutines.launch
 
 enum class AppView(val title: String, val icon: ImageVector? = null) {
     Home("Home", Icons.Filled.Home),
     Create(title = "Buat", Icons.Filled.Add),
-    Profile(title = "Profil", Icons.Filled.Person)
+    Profile(title = "Profil", Icons.Filled.Person),
+    ShoppingCart(title = "Keranjang", Icons.Filled.ShoppingCart) // Add this
 }
 
 data class BottonNavItem(val view: AppView, val label: String)
@@ -67,6 +76,7 @@ fun MyTopAppBar(
 fun CustomBottomNavigationBar(
     navController: NavController,
     currentDestination: NavDestination?,
+    onFabClick: () -> Unit, // Changed: Now takes a callback instead of navigating directly
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier) {
@@ -93,9 +103,7 @@ fun CustomBottomNavigationBar(
                 selected = homeSelected,
                 onClick = {
                     navController.navigate(AppView.Home.name) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
+                        popUpTo(navController.graph.startDestinationId) { saveState = true }
                         launchSingleTop = true
                         restoreState = true
                     }
@@ -128,9 +136,7 @@ fun CustomBottomNavigationBar(
                 selected = profileSelected,
                 onClick = {
                     navController.navigate(AppView.Profile.name) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
+                        popUpTo(navController.graph.startDestinationId) { saveState = true }
                         launchSingleTop = true
                         restoreState = true
                     }
@@ -139,15 +145,7 @@ fun CustomBottomNavigationBar(
         }
 
         FloatingActionButton(
-            onClick = {
-                navController.navigate(AppView.Create.name) {
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
+            onClick = onFabClick, // Trigger the bottom sheet
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 0.dp)
@@ -166,19 +164,8 @@ fun CustomBottomNavigationBar(
 }
 
 @Composable
-fun CreateScreen(modifier: Modifier = Modifier) {
-    Surface(modifier = modifier.fillMaxSize()) {
-        Text(
-            text = "Create Screen",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(15.dp)
-        )
-    }
-}
-
-@Composable
-fun ProfileScreen(modifier: Modifier = Modifier) {
-    Surface(modifier = modifier.fillMaxSize()) {
+fun ProfileScreen() {
+    Surface(modifier = Modifier.fillMaxSize()) {
         Text(
             text = "Profile Screen",
             style = MaterialTheme.typography.headlineMedium,
@@ -187,6 +174,7 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview(showBackground = true, showSystemUi = true)
 fun AppRouting() {
@@ -195,6 +183,13 @@ fun AppRouting() {
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route
     val currentView = AppView.entries.find { it.name == currentRoute }
+
+    // --- Bottom Sheet State ---
+    var showBottomSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true // Set to false if you want it to open half-way first
+    )
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -207,29 +202,31 @@ fun AppRouting() {
             }
         },
         bottomBar = {
-            if (currentRoute == AppView.Home.name || currentRoute == AppView.Create.name || currentRoute == AppView.Profile.name) {
-                CustomBottomNavigationBar(
-                    navController = navController,
-                    currentDestination = currentDestination
-                )
-            }
+            CustomBottomNavigationBar(
+                navController = navController,
+                currentDestination = currentDestination,
+                onFabClick = {
+                    // Open the Bottom Sheet when FAB is clicked
+                    showBottomSheet = true
+                }
+            )
         }
     ) { innerPadding ->
+
+        // The Main Navigation Host
         NavHost(
             navController = navController,
             startDestination = AppView.Home.name,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(route = AppView.Home.name) {
-                HomeView(navController = navController, modifier = Modifier.fillMaxSize())
+            composable(AppView.Home.name) {
+                HomeView(navControlIer = navController)
             }
 
-            composable(route = AppView.Create.name) {
-                CreateScreen(modifier = Modifier.fillMaxSize())
-            }
+            // Note: We removed the "Create" composable route because it is now a BottomSheet
 
-            composable(route = AppView.Profile.name) {
-                ProfileScreen(modifier = Modifier.fillMaxSize())
+            composable(AppView.Profile.name) {
+                ProfileScreen()
             }
 
             composable(
@@ -251,6 +248,32 @@ fun AppRouting() {
                 com.example.alp_visprog.views.CreateExchangeView(
                     helpRequestId = helpRequestId,
                     onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(AppView.ShoppingCart.name) {
+                com.example.alp_visprog.views.ShoppingCartView(
+                    onBackClick = { navController.navigateUp() }
+                )
+            }
+        }
+
+        // --- The Bottom Sheet Implementation ---
+        if (showBottomSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showBottomSheet = false },
+                sheetState = sheetState
+            ) {
+                // The Content of the Sheet
+                CreateHelpRequestView(
+                    onBackClick = {
+                        // Close the sheet smoothly on success/cancel
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                showBottomSheet = false
+                            }
+                        }
+                    }
                 )
             }
         }

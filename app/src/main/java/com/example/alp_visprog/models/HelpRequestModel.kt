@@ -1,22 +1,40 @@
 package com.example.alp_visprog.models
 
-// 1. The main model (What we get from the DB)
+// Request Body: Matches your backend's "CreateHelpRequest" interface
+data class CreateHelpRequest(
+    val nameOfProduct: String,
+    val description: String,
+    val exchangeProductName: String,
+    val location: String,
+    val imageUrl: String,
+    val categoryId: Int,
+    val userId: Int,
+    // --- NEW FIELDS ---
+    val contactPhone: String,
+    val contactEmail: String
+)
+
+// Response Body: Matches your backend's "HelpRequestResponse"
 data class HelpRequestModel(
     val id: Int,
-    val title: String,
+    val nameOfProduct: String,
     val description: String,
-    val category: String, // e.g., "Physical", "Academic", "Borrowing"
-    val postedDate: String
+    val exchangeProductName: String,
+    val location: String,
+    val imageUrl: String,
+    val isCheckout: Boolean,
+    val userId: Int,
+    val categoryId: Int,
+    // --- NEW FIELDS ---
+    val contactPhone: String,
+    val contactEmail: String?
 )
 
-// 2. The Create Request (What we send to the API)
-data class CreateHelpRequestRequest(
-    val title: String,
-    val description: String,
-    val category: String
+// API Response Wrappers
+data class CreateHelpRequestResponse(
+    val data: HelpRequestModel
 )
 
-// 3. Response wrapper (if getting a list of posts)
 data class GetAllHelpRequestsResponse(
     val data: List<HelpRequestModel>
 )

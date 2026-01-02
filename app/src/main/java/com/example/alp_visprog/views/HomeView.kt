@@ -373,31 +373,29 @@ fun HelpRequestCard(helpRequest: HelpRequestModel) {
                 color = BrandOrange,
                 modifier = Modifier.padding(horizontal = 10.dp)
             )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            Button(
+                onClick = {
+                    // Navigate to "Reply to Post #1"
+                    navControlIer.navigate("create_exchange/1")
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF6C35))
             ) {
-                Button(
-                    onClick = { /* runtime action */ },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)
-                ) {
-                    Text("Tawarkan Tukar")
-                }
-                OutlinedButton(
-                    onClick = { /* runtime action */ },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandOrange)
-                ) {
-                    Text("Hubungi Penjual")
-                }
+                Text("Test: Offer Help for Post #1")
             }
+            // --- TEMP BUTTON TO TEST FEATURE ---
+            Button(
+                onClick = {
+                    // Navigate to the route we defined in AppRouting
+                    // We hardcode "1" for testing (representing Post ID #1)
+                    navControlIer.navigate("exchange_list/1")
+                }
+            ) {
+                Text(text = "See Offers for Post #1")
+            }
+
+
         }
+
     }
 }
 
