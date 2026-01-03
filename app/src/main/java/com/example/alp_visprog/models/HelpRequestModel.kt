@@ -1,20 +1,13 @@
 package com.example.alp_visprog.models
 
-// Request Body: Matches your backend's "CreateHelpRequest" interface
-data class CreateHelpRequest(
-    val nameOfProduct: String,
-    val description: String,
-    val exchangeProductName: String,
-    val location: String,
-    val imageUrl: String,
-    val categoryId: Int,
-    val userId: Int,
-    // --- NEW FIELDS ---
-    val contactPhone: String,
-    val contactEmail: String
+// 1. The main model (What we get from the DB)
+
+data class UserInHelpRequest(
+    val id: Int,
+    val name: String,
+    val email: String
 )
 
-// Response Body: Matches your backend's "HelpRequestResponse"
 data class HelpRequestModel(
     val id: Int,
     val nameOfProduct: String,
@@ -23,16 +16,20 @@ data class HelpRequestModel(
     val location: String,
     val imageUrl: String,
     val isCheckout: Boolean,
-    val userId: Int,
     val categoryId: Int,
-    // --- NEW FIELDS ---
-    val contactPhone: String,
-    val contactEmail: String?
+    val userId: Int,
+    val createdAt: String,
+    val user: UserInHelpRequest?
 )
 
-// API Response Wrappers
-data class CreateHelpRequestResponse(
-    val data: HelpRequestModel
+// 2. The Create Request (What we send to the API)
+data class CreateHelpRequestRequest(
+    val nameOfProduct: String,
+    val description: String,
+    val exchangeProductName: String,
+    val location: String,
+    val imageUrl: String,
+    val categoryId: Int
 )
 
 data class GetAllHelpRequestsResponse(
