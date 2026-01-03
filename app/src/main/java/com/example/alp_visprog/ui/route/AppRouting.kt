@@ -33,7 +33,9 @@ import androidx.navigation.navArgument
 import com.example.alp_visprog.views.CreateHelpRequestView
 import com.example.alp_visprog.views.ExchangeListView
 import com.example.alp_visprog.views.HomeView
+import com.example.alp_visprog.views.LoginView
 import com.example.alp_visprog.views.ProfileView
+import com.example.alp_visprog.views.RegisterView
 import kotlinx.coroutines.launch
 
 enum class AppView(val title: String, val icon: ImageVector? = null) {
@@ -172,46 +174,33 @@ fun AppRouting() {
     val currentRoute = currentDestination?.route
     val currentView = AppView.entries.find { it.name == currentRoute }
 
+    // Check if current route is authentication screen
+    val isAuthScreen = currentRoute == "register" || currentRoute == "login"
+
     // --- Bottom Sheet State ---
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true // Set to false if you want it to open half-way first
+        skipPartiallyExpanded = true
     )
     val scope = rememberCoroutineScope()
 
-    Scaffold(
-        topBar = {
-            if (currentRoute != AppView.Home.name) {
-                MyTopAppBar(
-                    currentView = currentView,
-                    canNavigateBack = navController.previousBackStackEntry != null,
-                    navigateUp = { navController.navigateUp() }
-                )
-            }
-        },
-        bottomBar = {
-            CustomBottomNavigationBar(
-                navController = navController,
-                currentDestination = currentDestination,
-                onFabClick = {
-                    // Open the Bottom Sheet when FAB is clicked
-                    showBottomSheet = true
-                }
-            )
-        }
-    ) { innerPadding ->
-
-        // The Main Navigation Host
+    // If on auth screen, show without Scaffold
+    if (isAuthScreen) {
         NavHost(
             navController = navController,
-            startDestination = AppView.Home.name,
-            modifier = Modifier.padding(innerPadding)
+            startDestination = "register"
         ) {
+            composable("register") {
+                RegisterView(navController = navController)
+            }
+
+            composable("login") {
+                LoginView(navController = navController)
+            }
+
             composable(AppView.Home.name) {
                 HomeView(navController = navController)
             }
-
-            // Note: We removed the "Create" composable route because it is now a BottomSheet
 
             composable(AppView.Profile.name) {
                 ProfileView()
@@ -245,24 +234,99 @@ fun AppRouting() {
                 )
             }
         }
-
-        // --- The Bottom Sheet Implementation ---
-        if (showBottomSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showBottomSheet = false },
-                sheetState = sheetState
-            ) {
-                // The Content of the Sheet
-                CreateHelpRequestView(
-                    onBackClick = {
-                        // Close the sheet smoothly on success/cancel
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) {
-                                showBottomSheet = false
-                            }
-                        }
+    } else {
+        // Main app with Scaffold (bottom bar, etc.)
+        Scaffold(
+            topBar = {
+                if (currentRoute != AppView.Home.name) {
+                    MyTopAppBar(
+                        currentView = currentView,
+                        canNavigateBack = navController.previousBackStackEntry != null,
+                        navigateUp = { navController.navigateUp() }
+                    )
+                }
+            },
+            bottomBar = {
+                CustomBottomNavigationBar(
+                    navController = navController,
+                    currentDestination = currentDestination,
+                    onFabClick = {
+                        showBottomSheet = true
                     }
                 )
+            }
+        ) { innerPadding ->
+
+            NavHost(
+                navController = navController,
+                startDestination = "register",
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable("register") {
+                    RegisterView(navController = navController)
+                }
+
+                composable("login") {
+                    LoginView(navController = navController)
+                }
+
+                composable(AppView.Home.name) {
+                    HomeView(navController = navController)
+                }
+
+                // Note: We removed the "Create" composable route because it is now a BottomSheet
+
+                composable(AppView.Profile.name) {
+                    ProfileView()
+                }
+
+                composable(
+                    route = "exchange_list/{helpRequestId}",
+                    arguments = listOf(navArgument("helpRequestId") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val helpRequestId = backStackEntry.arguments?.getInt("helpRequestId") ?: 0
+                    ExchangeListView(
+                        helpRequestId = helpRequestId,
+                        onBackClick = { navController.navigateUp() }
+                    )
+                }
+
+                composable(
+                    route = "create_exchange/{helpRequestId}",
+                    arguments = listOf(navArgument("helpRequestId") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val helpRequestId = backStackEntry.arguments?.getInt("helpRequestId") ?: 0
+                    com.example.alp_visprog.views.CreateExchangeView(
+                        helpRequestId = helpRequestId,
+                        onBackClick = { navController.popBackStack() }
+                    )
+                }
+
+                composable(AppView.ShoppingCart.name) {
+                    com.example.alp_visprog.views.ShoppingCartView(
+                        onBackClick = { navController.navigateUp() }
+                    )
+                }
+            }
+
+            // --- The Bottom Sheet Implementation ---
+            if (showBottomSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showBottomSheet = false },
+                    sheetState = sheetState
+                ) {
+                    // The Content of the Sheet
+                    CreateHelpRequestView(
+                        onBackClick = {
+                            // Close the sheet smoothly on success/cancel
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    showBottomSheet = false
+                                }
+                            }
+                        }
+                    )
+                }
             }
         }
     }

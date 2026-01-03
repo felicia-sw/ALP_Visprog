@@ -177,7 +177,7 @@ fun HomeContent(
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = { Text("Cari tetangga atau barang...") },
+                            placeholder = { Text("Cari Barang atau Jasa ...") },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Search,
@@ -191,13 +191,7 @@ fun HomeContent(
                                 focusedContainerColor = Color.White
                             )
                         )
-                        Button(
-                            onClick = { },
-                            colors = ButtonDefaults.buttonColors(containerColor = BrandOrange),
-                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 15.dp)
-                        ) {
-                            Text("Filter")
-                        }
+
                     }
                     Card(
                         modifier = Modifier

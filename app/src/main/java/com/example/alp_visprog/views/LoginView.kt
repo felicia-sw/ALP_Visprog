@@ -73,7 +73,7 @@ fun LoginView(navController: NavController?) {
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
-                    Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "Platform Barter Komunitas",
                         fontSize = 15.sp,
@@ -121,7 +121,7 @@ fun LoginView(navController: NavController?) {
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Email", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(5.dp))
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -142,7 +142,7 @@ fun LoginView(navController: NavController?) {
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Kata Sandi", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(5.dp))
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -185,7 +185,7 @@ fun LoginView(navController: NavController?) {
                 Button(
                     onClick = {
                         // Navigate into the main app and clear the login/register screens from the backstack
-                        navController?.navigate("main") {
+                        navController?.navigate("Home") {
                             popUpTo("login") { inclusive = true }
                         }
                     },

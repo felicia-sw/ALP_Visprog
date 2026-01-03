@@ -53,7 +53,7 @@ fun RegisterView(navController: NavController?) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(orangeColor)
-                        .padding(bottom = 30.dp, top = 20.dp),
+                        .padding(bottom = 20.dp, top = 20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
@@ -70,14 +70,14 @@ fun RegisterView(navController: NavController?) {
                             tint = orangeColor
                         )
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(5.dp))
                     Text(
                         text = "UnityGrid",
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
-                    Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "Platform Barter Komunitas",
                         fontSize = 15.sp,
@@ -119,13 +119,13 @@ fun RegisterView(navController: NavController?) {
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(30.dp)) }
+            item { Spacer(modifier = Modifier.height(15.dp)) }
 
             // Form Section
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Nama Lengkap", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     OutlinedTextField(
                         value = fullName,
                         onValueChange = { fullName = it },
@@ -145,7 +145,7 @@ fun RegisterView(navController: NavController?) {
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Nomor Telepon", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     OutlinedTextField(
                         value = phoneNumber,
                         onValueChange = { phoneNumber = it },
@@ -166,7 +166,7 @@ fun RegisterView(navController: NavController?) {
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Email", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -187,7 +187,7 @@ fun RegisterView(navController: NavController?) {
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Kata Sandi", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -215,7 +215,7 @@ fun RegisterView(navController: NavController?) {
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Konfirmasi Kata Sandi", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     OutlinedTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
@@ -244,7 +244,7 @@ fun RegisterView(navController: NavController?) {
                 Button(
                     onClick = {
                         // After registration, navigate into the main app and clear auth from backstack
-                        navController?.navigate("main") {
+                        navController?.navigate("Home") {
                             popUpTo("register") { inclusive = true }
                         }
                     },
@@ -259,7 +259,6 @@ fun RegisterView(navController: NavController?) {
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(20.dp)) }
 
             item {
                 Row(
