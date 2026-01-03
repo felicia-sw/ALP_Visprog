@@ -69,4 +69,10 @@ dependencies {
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation("com.auth0.android:jwtdecode:2.0.2")
+
+    // Add this line for Image Loading (Coil)
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
+    // (Ensure these are also present as per your file, which they are)
+    implementation(libs.androidx.material.icons.extended)
 }

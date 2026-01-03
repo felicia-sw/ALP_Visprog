@@ -32,7 +32,6 @@ data class CreateHelpRequestRequest(
     val categoryId: Int
 )
 
-// 3. Response wrapper (if getting a list of posts)
 data class GetAllHelpRequestsResponse(
     val data: List<HelpRequestModel>
 )
