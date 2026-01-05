@@ -15,6 +15,10 @@ class HelpRequestRepository(
         return helpRequestAPIService.getAllHelpRequests()
     }
 
+    fun getUserHelpRequests(bearerToken: String): Call<GetAllHelpRequestsResponse> {
+        return helpRequestAPIService.getUserHelpRequests(bearerToken)
+    }
+
     fun createHelpRequest(
         nameOfProduct: String,
         description: String,

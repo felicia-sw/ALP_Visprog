@@ -1,5 +1,6 @@
 package com.example.alp_visprog.viewModel
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -11,8 +12,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.alp_visprog.App
 import com.example.alp_visprog.models.ErrorModel
+import com.example.alp_visprog.models.GetAllHelpRequestsResponse
+import com.example.alp_visprog.models.HelpRequestModel
 import com.example.alp_visprog.models.ProfileResponse
 import com.example.alp_visprog.models.UpdateProfileRequest
+import com.example.alp_visprog.repositories.HelpRequestRepository
 import com.example.alp_visprog.repositories.ProfileRepositoryInterface
 import com.example.alp_visprog.repositories.UserRepositoryInterface
 import com.example.alp_visprog.uiStates.ProfileStatusUIState
@@ -28,7 +32,8 @@ import kotlin.text.isBlank
 
 class ProfileViewModel(
     private val profileRepository: ProfileRepositoryInterface,
-    private val userRepository: UserRepositoryInterface
+    private val userRepository: UserRepositoryInterface,
+    private val helpRequestRepository: HelpRequestRepository
 ) : ViewModel() {
 
     // ✅ HARUS mutableStateOf supaya Compose bisa recompose (biar tidak stuck di Loading)
@@ -36,6 +41,22 @@ class ProfileViewModel(
         private set
 
     var updateStatus: UpdateProfileStatusUIState by mutableStateOf(UpdateProfileStatusUIState.Start)
+        private set
+
+    var userHelpRequests by mutableStateOf<List<HelpRequestModel>>(emptyList())
+        private set
+
+    var isLoadingHelpRequests by mutableStateOf(false)
+        private set
+
+    // Statistics
+    var totalTawaran by mutableStateOf(0)
+        private set
+
+    var totalBertukar by mutableStateOf(0)
+        private set
+
+    var totalProses by mutableStateOf(0)
         private set
 
     fun fetchProfile() {
@@ -54,6 +75,8 @@ class ProfileViewModel(
                 override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {
                     if (res.isSuccessful && res.body() != null) {
                         profileStatus = ProfileStatusUIState.Success(res.body()!!.data)
+                        // Fetch help requests after profile is loaded
+                        fetchUserHelpRequests()
                     } else {
                         val msg = try {
                             val err = Gson().fromJson(res.errorBody()!!.charStream(), ErrorModel::class.java)
@@ -70,6 +93,79 @@ class ProfileViewModel(
                 }
             })
         }
+    }
+
+    fun fetchUserHelpRequests() {
+        viewModelScope.launch {
+            isLoadingHelpRequests = true
+            Log.d("ProfileViewModel", "🔄 Starting to fetch user help requests...")
+
+            val token = userRepository.currentUserToken.first()
+            if (token == "Unknown" || token.isBlank()) {
+                isLoadingHelpRequests = false
+                Log.d("ProfileViewModel", "❌ No token available")
+                // Initialize to zero if no token
+                totalTawaran = 0
+                totalBertukar = 0
+                totalProses = 0
+                return@launch
+            }
+
+            val bearer = "Bearer $token"
+            Log.d("ProfileViewModel", "🔑 Token: ${token.take(20)}...")
+
+            helpRequestRepository.getUserHelpRequests(bearer).enqueue(object : Callback<GetAllHelpRequestsResponse> {
+                override fun onResponse(
+                    call: Call<GetAllHelpRequestsResponse>,
+                    res: Response<GetAllHelpRequestsResponse>
+                ) {
+                    isLoadingHelpRequests = false
+                    Log.d("ProfileViewModel", "📥 Response received - Code: ${res.code()}")
+
+                    if (res.isSuccessful && res.body() != null) {
+                        userHelpRequests = res.body()!!.data
+                        Log.d("ProfileViewModel", "✅ Success! Found ${userHelpRequests.size} help requests")
+                        calculateStatistics()
+                        Log.d("ProfileViewModel", "📊 Stats - Tawaran: $totalTawaran, Bertukar: $totalBertukar, Proses: $totalProses")
+                    } else {
+                        Log.d("ProfileViewModel", "❌ API call failed - Code: ${res.code()}")
+                        try {
+                            val errorBody = res.errorBody()?.string()
+                            Log.d("ProfileViewModel", "Error body: $errorBody")
+                        } catch (e: Exception) {
+                            Log.d("ProfileViewModel", "Could not read error body")
+                        }
+                        // API call failed, set to zero
+                        userHelpRequests = emptyList()
+                        totalTawaran = 0
+                        totalBertukar = 0
+                        totalProses = 0
+                    }
+                }
+
+                override fun onFailure(call: Call<GetAllHelpRequestsResponse>, t: Throwable) {
+                    isLoadingHelpRequests = false
+                    Log.d("ProfileViewModel", "💥 Network error: ${t.message}")
+                    Log.e("ProfileViewModel", "Error details", t)
+                    // Network error, set to zero
+                    userHelpRequests = emptyList()
+                    totalTawaran = 0
+                    totalBertukar = 0
+                    totalProses = 0
+                }
+            })
+        }
+    }
+
+    private fun calculateStatistics() {
+        // Total Tawaran: All help requests created by user
+        totalTawaran = userHelpRequests.size
+
+        // Total Bertukar: Help requests that are checked out (completed exchanges)
+        totalBertukar = userHelpRequests.count { it.isCheckout }
+
+        // Total Proses: Help requests that are not yet checked out (in progress)
+        totalProses = userHelpRequests.count { !it.isCheckout }
     }
 
     fun updateProfile(fullName: String, location: String, bio: String?) {
@@ -119,7 +215,8 @@ class ProfileViewModel(
                 val app = (this[APPLICATION_KEY] as App)
                 ProfileViewModel(
                     profileRepository = app.container.profileRepository,
-                    userRepository = app.container.userRepository
+                    userRepository = app.container.userRepository,
+                    helpRequestRepository = app.container.helpRequestRepository
                 )
             }
         }

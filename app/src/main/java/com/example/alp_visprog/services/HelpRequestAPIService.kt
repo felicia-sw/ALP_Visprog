@@ -7,6 +7,7 @@ import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Header
 
 interface HelpRequestAPIService {
     @GET("api/help-requests")
@@ -16,4 +17,9 @@ interface HelpRequestAPIService {
     fun createHelpRequest(
         @Body request: CreateHelpRequest
     ): Call<CreateHelpRequestResponse>
+
+    @GET("api/help-requests/user")
+    fun getUserHelpRequests(
+        @Header("Authorization") bearerToken: String
+    ): Call<GetAllHelpRequestsResponse>
 }
