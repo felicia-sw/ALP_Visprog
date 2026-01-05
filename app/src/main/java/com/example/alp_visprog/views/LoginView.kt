@@ -21,14 +21,48 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.example.alp_visprog.uiStates.AuthenticationStatusUIState
+import com.example.alp_visprog.viewModel.AuthenticationViewModel
 
 
 @Composable
-fun LoginView(navController: NavController?) {
+fun LoginView(navController: NavHostController?) {
+    val authViewModel: AuthenticationViewModel = viewModel(factory = AuthenticationViewModel.Factory)
+    val authStatus = authViewModel.authenticationStatus
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var showError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    // Update ViewModel when email/password changes
+    LaunchedEffect(email) {
+        authViewModel.changeEmailInput(email)
+    }
+
+    LaunchedEffect(password) {
+        authViewModel.changePasswordInput(password)
+    }
+
+    // Handle authentication status changes
+    LaunchedEffect(authStatus) {
+        when (authStatus) {
+            is AuthenticationStatusUIState.Failed -> {
+                showError = true
+                errorMessage = authStatus.errorMessage
+            }
+            is AuthenticationStatusUIState.Success -> {
+                showError = false
+            }
+            else -> {
+                showError = false
+            }
+        }
+    }
 
     val orangeColor = Color(0xFFF9794D)
     val backgroundColor = Color(0xFFFFF6E3)
@@ -117,6 +151,38 @@ fun LoginView(navController: NavController?) {
 
             item { Spacer(modifier = Modifier.height(30.dp)) }
 
+            // Show error message if login fails
+            if (showError) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 30.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(15.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = "Error",
+                                tint = Color.Red,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = errorMessage,
+                                color = Color.Red,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+                item { Spacer(modifier = Modifier.height(15.dp)) }
+            }
+
             // Form Section
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
@@ -133,7 +199,8 @@ fun LoginView(navController: NavController?) {
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
                             unfocusedBorderColor = Color.LightGray,
-                        )
+                        ),
+                        enabled = authStatus !is AuthenticationStatusUIState.Loading
                     )
                 }
             }
@@ -161,7 +228,8 @@ fun LoginView(navController: NavController?) {
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
                             unfocusedBorderColor = Color.LightGray,
-                        )
+                        ),
+                        enabled = authStatus !is AuthenticationStatusUIState.Loading
                     )
                 }
             }
@@ -184,19 +252,24 @@ fun LoginView(navController: NavController?) {
             item {
                 Button(
                     onClick = {
-                        // Navigate into the main app and clear the login/register screens from the backstack
-                        navController?.navigate("Home") {
-                            popUpTo("login") { inclusive = true }
-                        }
+                        navController?.let { authViewModel.login(it) }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 30.dp)
                         .height(50.dp),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = orangeColor)
+                    colors = ButtonDefaults.buttonColors(containerColor = orangeColor),
+                    enabled = email.isNotEmpty() && password.isNotEmpty() && authStatus !is AuthenticationStatusUIState.Loading
                 ) {
-                    Text("Masuk", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    if (authStatus is AuthenticationStatusUIState.Loading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        Text("Masuk", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
 
@@ -223,5 +296,5 @@ fun LoginView(navController: NavController?) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun LoginViewPreview() {
-    LoginView(navController = null)
+    LoginView(navController = rememberNavController())
 }

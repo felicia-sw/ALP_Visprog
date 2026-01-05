@@ -184,39 +184,102 @@ class AuthenticationViewModel(
 
                 call.enqueue(object : Callback<UserResponse> {
                     override fun onResponse(call: Call<UserResponse>, res: Response<UserResponse>) {
+                        viewModelScope.launch {
+                            // Inside fun register(...)
+                            if (res.isSuccessful) {
+                                val token = res.body()!!.data.token
+                                val jwt = JWT(token!!)
+                                val username = jwt.getClaim("username").asString()
 
-                        // Inside fun register(...)
-                        if (res.isSuccessful) {
-                            val token = res.body()!!.data.token
-                            val jwt = JWT(token!!)
-                            val username = jwt.getClaim("username").asString()
+                                // [Modified] Pass 'emailInput' here
+                                savedUsernameToken(token, username!!, emailInput)
 
-                            // [Modified] Pass 'emailInput' here
-                            savedUsernameToken(token, username!!, emailInput)
+                                authenticationStatus =
+                                    AuthenticationStatusUIState.Success(res.body()!!.data)
+                                // ... rest of code
 
-                            authenticationStatus =
-                                AuthenticationStatusUIState.Success(res.body()!!.data)
-                            // ... rest of code
-
-                            resetViewModel()
-                            navController.navigate("home") {
-                                popUpTo("login") {
-                                    inclusive = true
+                                resetViewModel()
+                                navController.navigate("Home") {
+                                    popUpTo("login") {
+                                        inclusive = true
+                                    }
                                 }
-                            }
-                        } else {
-                            val errorMessage = Gson().fromJson(
-                                res.errorBody()!!.charStream(),
-                                ErrorModel::class.java
-                            )
+                            } else {
+                                val errorMessage = try {
+                                    val error = Gson().fromJson(
+                                        res.errorBody()!!.charStream(),
+                                        ErrorModel::class.java
+                                    )
+                                    error?.errors ?: "Registration failed: ${res.code()}"
+                                } catch (e: Exception) {
+                                    "Registration failed: ${res.code()}"
+                                }
 
-                            authenticationStatus = AuthenticationStatusUIState.Failed(errorMessage.errors)
+                                authenticationStatus = AuthenticationStatusUIState.Failed(errorMessage)
+                            }
                         }
                     }
 
                     override fun onFailure(call: Call<UserResponse>, t: Throwable) {
-                        authenticationStatus =
-                            AuthenticationStatusUIState.Failed(t.localizedMessage ?: "Unknown error")
+                        viewModelScope.launch {
+                            authenticationStatus =
+                                AuthenticationStatusUIState.Failed(t.localizedMessage ?: "Unknown error")
+                        }
+                    }
+                })
+
+            } catch (error: IOException) {
+                authenticationStatus = AuthenticationStatusUIState.Failed(error.localizedMessage ?: "Network error")
+            }
+        }
+    }
+
+    fun login(navController: NavHostController) {
+        viewModelScope.launch {
+            authenticationStatus = AuthenticationStatusUIState.Loading
+
+            try {
+                val call = authenticationRepository.login(emailInput, passwordInput)
+
+                call.enqueue(object : Callback<UserResponse> {
+                    override fun onResponse(call: Call<UserResponse>, res: Response<UserResponse>) {
+                        viewModelScope.launch {
+                            if (res.isSuccessful && res.body() != null) {
+                                val token = res.body()!!.data.token
+                                val jwt = JWT(token!!)
+                                val username = jwt.getClaim("username").asString()
+
+                                savedUsernameToken(token, username!!, emailInput)
+
+                                authenticationStatus = AuthenticationStatusUIState.Success(res.body()!!.data)
+
+                                resetViewModel()
+                                navController.navigate("Home") {
+                                    popUpTo("login") {
+                                        inclusive = true
+                                    }
+                                }
+                            } else {
+                                val errorMessage = try {
+                                    val error = Gson().fromJson(
+                                        res.errorBody()!!.charStream(),
+                                        ErrorModel::class.java
+                                    )
+                                    error?.errors ?: "Login failed: ${res.code()}"
+                                } catch (e: Exception) {
+                                    "Login failed: ${res.code()}"
+                                }
+
+                                authenticationStatus = AuthenticationStatusUIState.Failed(errorMessage)
+                            }
+                        }
+                    }
+
+                    override fun onFailure(call: Call<UserResponse>, t: Throwable) {
+                        viewModelScope.launch {
+                            authenticationStatus =
+                                AuthenticationStatusUIState.Failed(t.localizedMessage ?: "Unknown error")
+                        }
                     }
                 })
 

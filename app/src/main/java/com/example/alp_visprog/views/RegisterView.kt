@@ -18,14 +18,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import com.example.alp_visprog.uiStates.AuthenticationStatusUIState
+import com.example.alp_visprog.viewModel.AuthenticationViewModel
 
 
 @Composable
-fun RegisterView(navController: NavController?) {
+fun RegisterView(
+    navController: NavHostController?,
+    authenticationViewModel: AuthenticationViewModel
+) {
+    val authStatus = authenticationViewModel.authenticationStatus
+
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -33,6 +39,41 @@ fun RegisterView(navController: NavController?) {
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var showError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    // Handle authentication status changes
+    LaunchedEffect(authStatus) {
+        when (authStatus) {
+            is AuthenticationStatusUIState.Failed -> {
+                showError = true
+                errorMessage = authStatus.errorMessage
+            }
+            is AuthenticationStatusUIState.Success -> {
+                showError = false
+            }
+            else -> {
+                showError = false
+            }
+        }
+    }
+
+    // Update ViewModel when fields change
+    LaunchedEffect(fullName) {
+        authenticationViewModel.changeUsernameInput(fullName)
+    }
+
+    LaunchedEffect(email) {
+        authenticationViewModel.changeEmailInput(email)
+    }
+
+    LaunchedEffect(password) {
+        authenticationViewModel.changePasswordInput(password)
+    }
+
+    LaunchedEffect(confirmPassword) {
+        authenticationViewModel.changeConfirmPasswordInput(confirmPassword)
+    }
 
     val orangeColor = Color(0xFFF9794D)
     val backgroundColor = Color(0xFFFFF6E3)
@@ -240,46 +281,95 @@ fun RegisterView(navController: NavController?) {
             }
             item { Spacer(modifier = Modifier.height(30.dp)) }
 
+            // Show error message if registration fails
+            if (showError) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 30.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(15.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = "Error",
+                                tint = Color.Red,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = errorMessage,
+                                color = Color.Red,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+                item { Spacer(modifier = Modifier.height(15.dp)) }
+            }
+
             item {
                 Button(
                     onClick = {
-                        // After registration, navigate into the main app and clear auth from backstack
-                        navController?.navigate("Home") {
-                            popUpTo("register") { inclusive = true }
-                        }
+                        navController?.let { authenticationViewModel.register(it) }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 30.dp)
                         .height(50.dp),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = orangeColor)
+                    colors = ButtonDefaults.buttonColors(containerColor = orangeColor),
+                    enabled = fullName.isNotEmpty() &&
+                             email.isNotEmpty() &&
+                             password.isNotEmpty() &&
+                             confirmPassword.isNotEmpty() &&
+                             password == confirmPassword &&
+                             password.length >= 6 &&
+                             authStatus !is AuthenticationStatusUIState.Loading
                 ) {
-                    Text("Daftar Akun", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Sudah punya akun?", color = Color.Gray, fontSize = 13.sp)
-                    TextButton(onClick = { navController?.navigate("login") }) {
-                        Text("Masuk", color = orangeColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    if (authStatus is AuthenticationStatusUIState.Loading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        Text("Daftar Akun", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
-             item { Spacer(modifier = Modifier.height(30.dp)) }
+
+            item { Spacer(modifier = Modifier.height(10.dp)) }
+
+            // Password validation hint
+            if (password.isNotEmpty() && password.length < 6) {
+                item {
+                    Text(
+                        text = "Password harus minimal 6 karakter",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 30.dp)
+                    )
+                }
+            }
+
+            // Password match validation
+            if (confirmPassword.isNotEmpty() && password != confirmPassword) {
+                item {
+                    Text(
+                        text = "Password tidak cocok",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 30.dp)
+                    )
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(10.dp)) }
         }
     }
-}
-
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun RegisterViewPreview() {
-    RegisterView(navController = null)
 }

@@ -19,7 +19,9 @@ data class HelpRequestModel(
     val categoryId: Int,
     val userId: Int,
     val createdAt: String,
-    val user: UserInHelpRequest?
+    val user: UserModel? = null,
+    val contactPhone: String? = null,
+    val contactEmail: String? = null
 )
 
 // 2. The Create Request (What we send to the API)
@@ -30,6 +32,25 @@ data class CreateHelpRequestRequest(
     val location: String,
     val imageUrl: String,
     val categoryId: Int
+)
+
+// 3. The Create Request with contact info (used by repository)
+data class CreateHelpRequest(
+    val nameOfProduct: String,
+    val description: String,
+    val exchangeProductName: String,
+    val location: String,
+    val imageUrl: String,
+    val categoryId: Int,
+    val userId: Int,
+    val contactPhone: String,
+    val contactEmail: String
+)
+
+// 4. The Create Response
+data class CreateHelpRequestResponse(
+    val message: String,
+    val data: HelpRequestModel
 )
 
 data class GetAllHelpRequestsResponse(

@@ -329,7 +329,6 @@ fun HomeContent(
                                         // TODO: Add to cart functionality
                                     },
                                     onContactSeller = {
-                                        // Navigate to contact or detail page
                                         navController?.navigate("create_exchange/${helpRequest.id}")
                                     },
                                     onProfileClick = { userId ->
