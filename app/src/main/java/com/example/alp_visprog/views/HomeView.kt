@@ -22,8 +22,10 @@ import androidx.navigation.compose.rememberNavController
 import com.example.alp_visprog.uiStates.HomeUIState
 import com.example.alp_visprog.viewModel.HomeViewModel
 import com.example.alp_visprog.ui.theme.BrandOrange
-import com.example.alp_visprog.ui.theme.BrandTeal
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.draw.alpha
+import coil.compose.AsyncImage
+import com.example.alp_visprog.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("UNUSED_PARAMETER")
@@ -41,6 +43,7 @@ fun HomeView(
         // Show a simple preview state without constructing model classes
         HomeContent(
             state = HomeUIState.Loading,
+            userLocation = "Preview Location",
             onRefresh = {},
             onFilterClick = { _, _ -> },
             navController = navController,
@@ -60,6 +63,7 @@ fun HomeView(
 
     HomeContent(
         state = state,
+        userLocation = viewModel.userLocation,
         onRefresh = { viewModel.loadHelpRequests() },
         onFilterClick = { type, status -> viewModel.filterHelpRequests(type, status) },
         navController = navController,
@@ -71,6 +75,7 @@ fun HomeView(
 @Composable
 fun HomeContent(
     state: HomeUIState,
+    userLocation: String,
     onRefresh: () -> Unit,
     onFilterClick: (String?, String?) -> Unit,
     modifier: Modifier = Modifier,
@@ -84,43 +89,192 @@ fun HomeContent(
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = BrandOrange,
-            shadowElevation = 5.dp
+        // NEW TOP BAR DESIGN
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp)
         ) {
+            // Translucent Supergraphic Background
+            // TODO: Replace with your actual supergraphic image
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(BrandOrange.copy(alpha = 0.9f))
+                    .alpha(0.3f)
+            ) {
+                // Placeholder for supergraphic - add your image here
+                // AsyncImage(model = R.drawable.supergraphic, ...)
+            }
+
+            // Content on top of supergraphic
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(15.dp),
+                    .fillMaxSize()
+                    .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = "Location",
-                        tint = Color.White,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text(
-                        text = "Lokasi: Banjarbaru",
-                        color = Color.White,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium
+                // LEFT: Logo (1:1 ratio, small)
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(Color.White, RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = R.drawable.app_icon_4,
+                        contentDescription = "Logo",
+                        modifier = Modifier.size(60.dp)
                     )
                 }
-                IconButton(onClick = { }) {
-                    Icon(
-                        imageVector = Icons.Default.ShoppingCart,
-                        contentDescription = "Cart",
-                        tint = Color.White
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // RIGHT: Search and Location
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Search Bar
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = {
+                            Text(
+                                "Cari Barang atau Jasa...",
+                                fontSize = 14.sp
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Color.White,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedBorderColor = BrandOrange
+                        ),
+                        singleLine = true
                     )
+
+                    // Location
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color.White.copy(alpha = 0.9f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Location",
+                                tint = BrandOrange,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = userLocation,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF333333)
+                            )
+                        }
+                    }
                 }
             }
         }
 
+        // FILTER BUTTONS - EVENLY SPACED
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            FilterChip(
+                selected = selectedFilter == "ALL",
+                onClick = {
+                    selectedFilter = "ALL"
+                    onFilterClick(null, null)
+                },
+                label = { Text("All") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = BrandOrange,
+                    selectedLabelColor = Color.White,
+                    containerColor = Color.White,
+                    labelColor = Color(0xFF666666)
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedFilter == "ALL",
+                    borderColor = if (selectedFilter == "ALL") BrandOrange else Color(0xFFCCCCCC),
+                    selectedBorderColor = BrandOrange,
+                    borderWidth = 1.dp
+                ),
+                modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+            )
+
+            FilterChip(
+                selected = selectedFilter == "BARANG",
+                onClick = {
+                    selectedFilter = "BARANG"
+                    onFilterClick("BARANG", null)
+                },
+                label = { Text("Barang") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = BrandOrange,
+                    selectedLabelColor = Color.White,
+                    containerColor = Color.White,
+                    labelColor = Color(0xFF666666)
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedFilter == "BARANG",
+                    borderColor = if (selectedFilter == "BARANG") BrandOrange else Color(0xFFCCCCCC),
+                    selectedBorderColor = BrandOrange,
+                    borderWidth = 1.dp
+                ),
+                modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+            )
+
+            FilterChip(
+                selected = selectedFilter == "JASA",
+                onClick = {
+                    selectedFilter = "JASA"
+                    onFilterClick("JASA", null)
+                },
+                label = { Text("Jasa") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = BrandOrange,
+                    selectedLabelColor = Color.White,
+                    containerColor = Color.White,
+                    labelColor = Color(0xFF666666)
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedFilter == "JASA",
+                    borderColor = if (selectedFilter == "JASA") BrandOrange else Color(0xFFCCCCCC),
+                    selectedBorderColor = BrandOrange,
+                    borderWidth = 1.dp
+                ),
+                modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+            )
+        }
+
+        // CONTENT BASED ON STATE
         when (state) {
             is HomeUIState.Loading -> {
                 Box(
@@ -143,14 +297,14 @@ fun HomeContent(
                             tint = Color.Red,
                             modifier = Modifier.size(48.dp)
                         )
-                        Spacer(modifier = Modifier.height(15.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "Error: ${state.errorMessage}",
                             color = Color.Red,
                             fontSize = 15.sp,
                             modifier = Modifier.padding(horizontal = 20.dp)
                         )
-                        Spacer(modifier = Modifier.height(15.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = onRefresh,
                             colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)
@@ -162,181 +316,44 @@ fun HomeContent(
             }
 
             is HomeUIState.Success -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFF5F5F5))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(15.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                if (state.data.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            placeholder = { Text("Cari Barang atau Jasa ...") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = "Search"
-                                )
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedContainerColor = Color.White,
-                                focusedContainerColor = Color.White
-                            )
-                        )
-
-                    }
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 15.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFE0F7FA)
-                        ),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = "Info",
-                                tint = BrandTeal,
-                                modifier = Modifier.size(20.dp)
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "No data",
+                                modifier = Modifier.size(48.dp),
+                                tint = Color.Gray
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text(
-                                    text = "Sistem Barter",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                )
-                                Text(
-                                    text = "Tukar barang dengan barang, jasa dengan jasa. Tanpa uang, hanya pertukaran!",
-                                    fontSize = 10.sp,
-                                    color = Color.Gray,
-                                    lineHeight = 13.sp
-                                )
-                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "No help requests available",
+                                color = Color.Gray,
+                                fontSize = 15.sp
+                            )
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(15.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 15.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        FilterChip(
-                            selected = selectedFilter == "ALL",
-                            onClick = {
-                                selectedFilter = "ALL"
-                                onFilterClick(null, null)
-                            },
-                            label = { Text("Semua") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.List,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = BrandOrange,
-                                selectedLabelColor = Color.White
+                        items(state.data) { helpRequest ->
+                            HelpRequestCard(
+                                request = helpRequest,
+                                onAddToCart = {
+                                    // TODO: Add to cart functionality
+                                },
+                                onContactSeller = {
+                                    navController?.navigate("create_exchange/${helpRequest.id}")
+                                },
+                                onProfileClick = { userId ->
+                                    navController?.navigate("Profile")
+                                }
                             )
-                        )
-                        FilterChip(
-                            selected = selectedFilter == "BARANG",
-                            onClick = {
-                                selectedFilter = "BARANG"
-                                onFilterClick("BARANG", null)
-                            },
-                            label = { Text("Barang") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.ShoppingBag,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = BrandOrange,
-                                selectedLabelColor = Color.White
-                            )
-                        )
-                        FilterChip(
-                            selected = selectedFilter == "JASA",
-                            onClick = {
-                                selectedFilter = "JASA"
-                                onFilterClick("JASA", null)
-                            },
-                            label = { Text("Jasa") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Build,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = BrandOrange,
-                                selectedLabelColor = Color.White
-                            ))
-                    }
-
-                    Spacer(modifier = Modifier.height(15.dp))
-
-                    if (state.data.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = "No data",
-                                    modifier = Modifier.size(48.dp),
-                                    tint = Color.Gray
-                                )
-                                Spacer(modifier = Modifier.height(15.dp))
-                                Text(
-                                    text = "No help requests available",
-                                    color = Color.Gray,
-                                    fontSize = 15.sp
-                                )
-                            }
-                        }
-                    } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(horizontal = 15.dp, vertical = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(15.dp)
-                        ) {
-                            items(state.data) { helpRequest ->
-                                HelpRequestCard(
-                                    request = helpRequest,
-                                    onAddToCart = {
-                                        // TODO: Add to cart functionality
-                                    },
-                                    onContactSeller = {
-                                        navController?.navigate("create_exchange/${helpRequest.id}")
-                                    },
-                                    onProfileClick = { userId ->
-                                        navController?.navigate("Profile")
-
-                                    }
-                                )
-                            }
                         }
                     }
                 }
@@ -352,6 +369,7 @@ fun HomeContent(
 fun HomeViewPreview() {
     HomeContent(
         state = HomeUIState.Loading,
+        userLocation = "Preview Location",
         onRefresh = {},
         onFilterClick = { _, _ -> }
     )

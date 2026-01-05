@@ -1,6 +1,9 @@
 package com.example.alp_visprog.viewModel
 
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -8,19 +11,25 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.alp_visprog.App
 import com.example.alp_visprog.models.GetAllHelpRequestsResponse as AllHelpResp
+import com.example.alp_visprog.models.ProfileResponse
 import com.example.alp_visprog.repositories.HelpRequestRepository
+import com.example.alp_visprog.repositories.ProfileRepositoryInterface
+import com.example.alp_visprog.repositories.UserRepositoryInterface
 import com.example.alp_visprog.uiStates.HomeUIState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class HomeViewModel(
-    private val helpRequestRepository: HelpRequestRepository
+    private val helpRequestRepository: HelpRequestRepository,
+    private val profileRepository: ProfileRepositoryInterface,
+    private val userRepository: UserRepositoryInterface
 ) : ViewModel() {
 
     companion object {
@@ -30,8 +39,11 @@ class HomeViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as App)
-                val helpRequestRepository = application.container.helpRequestRepository
-                HomeViewModel(helpRequestRepository)
+                HomeViewModel(
+                    helpRequestRepository = application.container.helpRequestRepository,
+                    profileRepository = application.container.profileRepository,
+                    userRepository = application.container.userRepository
+                )
             }
         }
     }
@@ -40,7 +52,44 @@ class HomeViewModel(
     private val _homeUIState = MutableStateFlow<HomeUIState>(HomeUIState.Loading)
     val homeUIState: StateFlow<HomeUIState> = _homeUIState.asStateFlow()
 
+    // User location from profile
+    var userLocation by mutableStateOf("Loading...")
+        private set
+
     private var isRequestInProgress = false
+
+    init {
+        // Fetch user location when ViewModel is created
+        fetchUserLocation()
+    }
+
+    private fun fetchUserLocation() {
+        viewModelScope.launch {
+            val token = userRepository.currentUserToken.first()
+            if (token == "Unknown" || token.isBlank()) {
+                userLocation = "Unknown"
+                return@launch
+            }
+
+            val bearer = "Bearer $token"
+            profileRepository.viewProfile(bearer).enqueue(object : Callback<ProfileResponse> {
+                override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {
+                    if (res.isSuccessful && res.body() != null) {
+                        userLocation = res.body()!!.data.location
+                        Log.d(TAG, "✅ User location fetched: $userLocation")
+                    } else {
+                        userLocation = "Unknown"
+                        Log.d(TAG, "❌ Failed to fetch user location")
+                    }
+                }
+
+                override fun onFailure(call: Call<ProfileResponse>, t: Throwable) {
+                    userLocation = "Unknown"
+                    Log.d(TAG, "💥 Error fetching user location: ${t.message}")
+                }
+            })
+        }
+    }
 
     // Fetch all help requests from backend
     fun loadHelpRequests() {
