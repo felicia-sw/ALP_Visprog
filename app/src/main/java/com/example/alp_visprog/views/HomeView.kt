@@ -44,6 +44,7 @@ fun HomeView(
         userLocation = viewModel.userLocation,
         onRefresh = { viewModel.loadHelpRequests() },
         onFilterClick = { type, status -> viewModel.filterHelpRequests(type, status) },
+        onSearch = { query -> viewModel.searchHelpRequests(query) },
         navController = navController,
         modifier = modifier
     )
@@ -56,6 +57,7 @@ fun HomeContent(
     userLocation: String,
     onRefresh: () -> Unit,
     onFilterClick: (String?, String?) -> Unit,
+    onSearch: (String) -> Unit,
     modifier: Modifier = Modifier,
     navController: NavController
 ) {
@@ -63,6 +65,18 @@ fun HomeContent(
     var selectedFilter by remember { mutableStateOf("Semua") }
     var showFilters by remember { mutableStateOf(true) }
     var isCompactView by remember { mutableStateOf(false) }
+
+    // Debounce search to avoid excessive API calls
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isEmpty()) {
+            // If search is cleared, reload all
+            onRefresh()
+        } else {
+            // Wait 500ms before searching
+            kotlinx.coroutines.delay(500)
+            onSearch(searchQuery)
+        }
+    }
 
     Box(
         modifier = modifier.fillMaxSize()
@@ -106,6 +120,17 @@ fun HomeContent(
                                 contentDescription = "Search",
                                 modifier = Modifier.size(20.dp)
                             )
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Clear search",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -200,6 +225,7 @@ fun HomeContent(
                         selected = selectedFilter == "Semua",
                         onClick = {
                             selectedFilter = "Semua"
+                            searchQuery = "" // Clear search when filtering
                             onFilterClick(null, null)
                         },
                         label = { Text("Semua") },
@@ -223,6 +249,7 @@ fun HomeContent(
                         selected = selectedFilter == "BARANG",
                         onClick = {
                             selectedFilter = "BARANG"
+                            searchQuery = "" // Clear search when filtering
                             onFilterClick("1", null)
                         },
                         label = { Text("Barang") },
@@ -246,6 +273,7 @@ fun HomeContent(
                         selected = selectedFilter == "JASA",
                         onClick = {
                             selectedFilter = "JASA"
+                            searchQuery = "" // Clear search when filtering
                             onFilterClick("2", null)
                         },
                         label = { Text("Jasa") },
@@ -322,7 +350,7 @@ fun HomeContent(
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "No help requests available",
+                                    text = if (searchQuery.isNotEmpty()) "Tidak ada hasil untuk \"$searchQuery\"" else "No help requests available",
                                     color = Color.Gray,
                                     fontSize = 15.sp
                                 )

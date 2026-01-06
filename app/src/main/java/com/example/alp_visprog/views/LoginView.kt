@@ -288,8 +288,3 @@ fun LoginView(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun LoginViewPreview() {
-    LoginView(navController = rememberNavController())
-}

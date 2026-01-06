@@ -201,4 +201,54 @@ class HomeViewModel(
             _homeUIState.value = HomeUIState.Error("Error: ${e.message}")
         }
     }
+
+    fun searchHelpRequests(query: String) {
+        Log.d(TAG, "searchHelpRequests: Searching for '$query'")
+
+        if (query.isBlank()) {
+            loadHelpRequests()
+            return
+        }
+
+        _homeUIState.value = HomeUIState.Loading
+
+        try {
+            val call = helpRequestRepository.getAllHelpRequests()
+
+            call.enqueue(object : Callback<AllHelpResp> {
+                override fun onResponse(p0: Call<AllHelpResp>, p1: Response<AllHelpResp>) {
+                    val response = p1
+                    Log.d(TAG, "searchHelpRequests onResponse: code ${response.code()}")
+
+                    if (response.isSuccessful) {
+                        val all = response.body()?.data ?: emptyList()
+
+                        // Search across multiple fields
+                        val searchResults = all.filter {
+                            it.nameOfProduct.contains(query, ignoreCase = true) ||
+                                    it.exchangeProductName.contains(query, ignoreCase = true) ||
+                                    it.description.contains(query, ignoreCase = true) ||
+                                    it.location.contains(query, ignoreCase = true)
+                        }
+
+                        Log.d(TAG, "searchHelpRequests: Found ${searchResults.size} results for '$query'")
+                        _homeUIState.value = HomeUIState.Success(searchResults)
+                    } else {
+                        val errorMsg = "Failed to search help requests (HTTP ${response.code()})"
+                        Log.e(TAG, errorMsg)
+                        _homeUIState.value = HomeUIState.Error(errorMsg)
+                    }
+                }
+
+                override fun onFailure(p0: Call<AllHelpResp>, p1: Throwable) {
+                    val errorMsg = p1.message ?: "Unknown Error"
+                    Log.e(TAG, "searchHelpRequests onFailure: $errorMsg", p1)
+                    _homeUIState.value = HomeUIState.Error("Network error: $errorMsg")
+                }
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "searchHelpRequests: Exception caught", e)
+            _homeUIState.value = HomeUIState.Error("Error: ${e.message}")
+        }
+    }
 }
