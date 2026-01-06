@@ -262,12 +262,14 @@ fun AppRouting() {
             composable("auth_check") {
                 AuthCheckScreen(
                     onAuthenticated = {
-                        navController.navigate(AppView.Home.name) {
+                        // Always send to Register, even if authenticated
+                        navController.navigate("register") {
                             popUpTo("auth_check") { inclusive = true }
                         }
                     },
                     onNotAuthenticated = {
-                        navController.navigate("login") {
+                        // Send unauthenticated users to Register
+                        navController.navigate("register") {
                             popUpTo("auth_check") { inclusive = true }
                         }
                     }

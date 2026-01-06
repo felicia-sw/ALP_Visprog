@@ -15,5 +15,7 @@ data class ProfileModel(
 data class UpdateProfileRequest(
     val fullName: String,
     val location: String,
+    val latitude: Double,
+    val longitude: Double,
     val bio: String?
 )

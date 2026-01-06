@@ -53,6 +53,7 @@ fun CreateHelpRequestView(
 ) {
     val dataStatus by viewModel.dataStatus.collectAsState()
     val context = LocalContext.current
+    var showLocationPicker by remember { mutableStateOf(false) }
 
     // Image Picker
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -75,6 +76,19 @@ fun CreateHelpRequestView(
         }
     }
 
+    // Location Picker Dialog
+    if (showLocationPicker) {
+        LocationPickerView(
+            onLocationSelected = { name, lat, lon ->
+                viewModel.location = name
+                viewModel.latitude = lat
+                viewModel.longitude = lon
+                showLocationPicker = false
+            },
+            onClose = { showLocationPicker = false }
+        )
+    }
+
     CreateHelpRequestContent(
         modifier = Modifier
             .fillMaxWidth()
@@ -85,7 +99,8 @@ fun CreateHelpRequestView(
         viewModel = viewModel,
         onImageClick = { photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
         onSubmit = { viewModel.submitHelpRequest() },
-        onClose = onBackClick
+        onClose = onBackClick,
+        onLocationClick = { showLocationPicker = true }
     )
 }
 
@@ -95,7 +110,8 @@ fun CreateHelpRequestContent(
     viewModel: CreateHelpRequestViewModel,
     onImageClick: () -> Unit,
     onSubmit: () -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onLocationClick: () -> Unit
 ) {
     Scaffold(
         modifier = modifier,
@@ -198,12 +214,40 @@ fun CreateHelpRequestContent(
 
             // --- Section 6: Lokasi ---
             SectionLabel("Lokasi")
-            StyledTextField(
-                value = viewModel.location,
-                onValueChange = { viewModel.location = it },
-                placeholder = "Contoh: Jakarta Barat",
-                icon = Icons.Default.LocationOn
+            OutlinedTextField(
+                value = viewModel.location.ifEmpty { "" },
+                onValueChange = {},
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onLocationClick() },
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = TextDark,
+                    disabledBorderColor = if (viewModel.location.isNotEmpty()) BrandCoral else BorderGray,
+                    disabledPlaceholderColor = TextLight,
+                    disabledContainerColor = Color.White,
+                    disabledLeadingIconColor = if (viewModel.location.isNotEmpty()) BrandCoral else TextLight
+                ),
+                placeholder = { Text("Klik untuk memilih lokasi", color = TextLight) },
+                leadingIcon = {
+                    Icon(Icons.Default.LocationOn, null)
+                },
+                trailingIcon = {
+                    if (viewModel.location.isNotEmpty()) {
+                        Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50))
+                    }
+                },
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
             )
+            if (viewModel.location.isNotEmpty()) {
+                Text(
+                    "✓ Lokasi terpilih",
+                    fontSize = 12.sp,
+                    color = Color(0xFF4CAF50),
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            }
 
             // --- Section 7: Info Kontak ---
             Spacer(modifier = Modifier.height(8.dp))

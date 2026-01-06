@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
@@ -213,8 +214,8 @@ fun ProfileView(navController: NavController? = null) {
                         EditProfileDialog(
                             profile = profile,
                             onDismiss = { showEdit = false },
-                            onSave = { fullName, location, bio ->
-                                vm.updateProfile(fullName, location, bio)
+                            onSave = { fullName, location, latitude, longitude, bio ->
+                                vm.updateProfile(fullName, location, latitude, longitude, bio)
                                 showEdit = false
                             }
                         )
@@ -598,11 +599,27 @@ fun StatItem(number: String, label: String, color: Color) {
 fun EditProfileDialog(
     profile: com.example.alp_visprog.models.ProfileModel,
     onDismiss: () -> Unit,
-    onSave: (String, String, String?) -> Unit
+    onSave: (String, String, Double, Double, String?) -> Unit
 ) {
     var fullName by remember { mutableStateOf(profile.fullName) }
     var location by remember { mutableStateOf(profile.location) }
+    var latitude by remember { mutableStateOf(profile.latitude) }
+    var longitude by remember { mutableStateOf(profile.longitude) }
     var bio by remember { mutableStateOf(profile.bio ?: "") }
+    var showLocationPicker by remember { mutableStateOf(false) }
+
+    // Location Picker Dialog
+    if (showLocationPicker) {
+        LocationPickerView(
+            onLocationSelected = { name, lat, lon ->
+                location = name
+                latitude = lat
+                longitude = lon
+                showLocationPicker = false
+            },
+            onClose = { showLocationPicker = false }
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -743,14 +760,39 @@ fun EditProfileDialog(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = location,
-                        onValueChange = { location = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        onValueChange = {},
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showLocationPicker = true },
+                        enabled = false,
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = Color(0xFFE0E0E0),
-                            focusedBorderColor = BrandOrange
-                        )
+                            disabledTextColor = Color.Black,
+                            disabledBorderColor = if (location.isNotEmpty()) BrandOrange else Color(0xFFE0E0E0),
+                            disabledPlaceholderColor = Color.Gray,
+                            disabledContainerColor = Color.White,
+                            disabledLeadingIconColor = if (location.isNotEmpty()) BrandOrange else Color.Gray
+                        ),
+                        placeholder = { Text("Klik untuk memilih lokasi", color = Color.Gray) },
+                        leadingIcon = {
+                            Icon(Icons.Default.LocationOn, null)
+                        },
+                        trailingIcon = {
+                            if (location.isNotEmpty()) {
+                                Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50))
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
                     )
+                    if (location.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "✓ Lokasi terpilih",
+                            fontSize = 12.sp,
+                            color = Color(0xFF4CAF50),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -801,7 +843,7 @@ fun EditProfileDialog(
 
                         Button(
                             onClick = {
-                                onSave(fullName, location, bio.ifBlank { null })
+                                onSave(fullName, location, latitude, longitude, bio.ifBlank { null })
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = BrandOrange),

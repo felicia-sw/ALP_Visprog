@@ -188,6 +188,10 @@ class AuthenticationViewModel(
                 authenticationStatus = AuthenticationStatusUIState.Failed("Format email tidak valid")
                 return
             }
+            locationNameInput.isBlank() -> {
+                authenticationStatus = AuthenticationStatusUIState.Failed("Lokasi rumah belum dipilih")
+                return
+            }
             passwordInput.length < 8 -> {
                 authenticationStatus = AuthenticationStatusUIState.Failed("Kata sandi minimal 8 karakter")
                 return
@@ -207,9 +211,9 @@ class AuthenticationViewModel(
                     emailInput,
                     passwordInput,
                     phoneInput,
-                    locationNameInput, // New
-                    latitudeInput,     // New
-                    longitudeInput     // New
+                    locationNameInput,
+                    latitudeInput,
+                    longitudeInput
                 )
                 call.enqueue(object : Callback<UserResponse> {
                     override fun onResponse(call: Call<UserResponse>, res: Response<UserResponse>) {

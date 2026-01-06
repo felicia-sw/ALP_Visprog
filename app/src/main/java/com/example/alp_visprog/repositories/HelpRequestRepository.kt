@@ -14,12 +14,18 @@ class HelpRequestRepository(
     }
 
     fun createHelpRequest(
+        bearerToken: String,
         nameOfProduct: String,
         description: String,
         exchangeProductName: String,
         location: String,
+        latitude: Double,
+        longitude: Double,
         imageUrl: String,
-        categoryId: Int
+        categoryId: Int,
+        userId: Int,
+        contactPhone: String,
+        contactEmail: String
     ): Call<GeneralResponse> {
 
         val request = CreateHelpRequestRequest(
@@ -27,10 +33,14 @@ class HelpRequestRepository(
             description = description,
             exchangeProductName = exchangeProductName,
             location = location,
+            latitude = latitude,
+            longitude = longitude,
             imageUrl = imageUrl,
-            categoryId = categoryId
+            categoryId = categoryId,
+            contactPhone = contactPhone,
+            contactEmail = contactEmail
         )
 
-        return helpRequestAPIService.createHelpRequest(request)
+        return helpRequestAPIService.createHelpRequest(bearerToken, request)
     }
 }

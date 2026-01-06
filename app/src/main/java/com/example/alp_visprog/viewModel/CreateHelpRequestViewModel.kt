@@ -11,6 +11,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.alp_visprog.App
 import com.example.alp_visprog.models.CreateHelpRequestResponse
+import com.example.alp_visprog.models.GeneralResponse
 import com.example.alp_visprog.repositories.HelpRequestRepository
 import com.example.alp_visprog.repositories.UserRepositoryInterface
 import com.example.alp_visprog.uiStates.CreateExchangeUIState
@@ -38,6 +39,8 @@ class CreateHelpRequestViewModel(
     var description by mutableStateOf("")
     var exchangeProductName by mutableStateOf("") // "Mau ditukar dengan apa?"
     var location by mutableStateOf("")
+    var latitude by mutableStateOf(0.0)
+    var longitude by mutableStateOf(0.0)
 
     // --- Contact Fields ---
     var contactName by mutableStateOf("") // For UI display only (derived from User)
@@ -59,6 +62,7 @@ class CreateHelpRequestViewModel(
     init {
         loadProfileData()
         loadCurrentUserId()
+        loadUserLocation()
     }
 
     fun loadProfileData() {
@@ -127,6 +131,21 @@ class CreateHelpRequestViewModel(
         }
     }
 
+    private fun loadUserLocation() {
+        viewModelScope.launch {
+            try {
+                val token = userRepository.currentUserToken.first()
+                if (token != "Unknown" && token.isNotBlank()) {
+                    // Note: Location will be loaded from profile in the view if needed
+                    // This just ensures we have the user's default location available
+                    Log.d("CreateHelpRequest", "✅ User token available for location fetch")
+                }
+            } catch (e: Exception) {
+                Log.e("CreateHelpRequest", "❌ Error loading user location", e)
+            }
+        }
+    }
+
     fun clearErrorMessage() {
         _dataStatus.value = CreateExchangeUIState.Idle
     }
@@ -176,6 +195,8 @@ class CreateHelpRequestViewModel(
                 Log.d("CreateHelpRequest", "📝 Name: $nameOfProduct")
                 Log.d("CreateHelpRequest", "📝 Category: $categoryIdInput")
                 Log.d("CreateHelpRequest", "📝 Location: $location")
+                Log.d("CreateHelpRequest", "📝 Latitude: $latitude")
+                Log.d("CreateHelpRequest", "📝 Longitude: $longitude")
                 Log.d("CreateHelpRequest", "📝 User ID: $currentUserId")
 
                 val requestCall = helpRequestRepository.createHelpRequest(
@@ -184,6 +205,8 @@ class CreateHelpRequestViewModel(
                     description = description,
                     exchangeProductName = exchangeProductName,
                     location = location,
+                    latitude = latitude,
+                    longitude = longitude,
                     imageUrl = finalImageUrl,
                     categoryId = categoryIdInput.toIntOrNull() ?: 1,
                     userId = if (currentUserId != -1) currentUserId else 1,
@@ -191,8 +214,8 @@ class CreateHelpRequestViewModel(
                     contactEmail = contactEmail
                 )
 
-                requestCall.enqueue(object : Callback<CreateHelpRequestResponse> {
-                    override fun onResponse(call: Call<CreateHelpRequestResponse>, response: Response<CreateHelpRequestResponse>) {
+                requestCall.enqueue(object : Callback<GeneralResponse> {
+                    override fun onResponse(call: Call<GeneralResponse>, response: Response<GeneralResponse>) {
                         if (response.isSuccessful) {
                             Log.d("CreateHelpRequest", "✅ Help request created successfully!")
                             _dataStatus.value = CreateExchangeUIState.Success
@@ -212,7 +235,7 @@ class CreateHelpRequestViewModel(
                         }
                     }
 
-                    override fun onFailure(call: Call<CreateHelpRequestResponse>, t: Throwable) {
+                    override fun onFailure(call: Call<GeneralResponse>, t: Throwable) {
                         Log.e("CreateHelpRequest", "❌ Network error: ${t.message}")
                         Log.e("CreateHelpRequest", "❌ Stack trace: ", t)
                         _dataStatus.value = CreateExchangeUIState.Error("Network error: ${t.localizedMessage}")

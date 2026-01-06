@@ -262,7 +262,7 @@ class ProfileViewModel(
         fetchUserHelpRequests()
     }
 
-    fun updateProfile(fullName: String, location: String, bio: String?) {
+    fun updateProfile(fullName: String, location: String, latitude: Double, longitude: Double, bio: String?) {
         viewModelScope.launch {
             try {
                 updateStatus = UpdateProfileStatusUIState.Loading
@@ -276,7 +276,13 @@ class ProfileViewModel(
                 }
 
                 val bearer = "Bearer $token"
-                val req = UpdateProfileRequest(fullName = fullName, location = location, bio = bio)
+                val req = UpdateProfileRequest(
+                    fullName = fullName,
+                    location = location,
+                    latitude = latitude,
+                    longitude = longitude,
+                    bio = bio
+                )
 
                 profileRepository.updateProfile(bearer, req).enqueue(object : Callback<ProfileResponse> {
                     override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {

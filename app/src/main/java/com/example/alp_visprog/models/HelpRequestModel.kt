@@ -32,8 +32,12 @@ data class CreateHelpRequestRequest(
     val description: String,
     val exchangeProductName: String,
     val location: String,
+    val latitude: Double,
+    val longitude: Double,
     val imageUrl: String,
-    val categoryId: Int
+    val categoryId: Int,
+    val contactPhone: String,
+    val contactEmail: String
 )
 
 // 3. The Create Request with contact info (used by repository)
