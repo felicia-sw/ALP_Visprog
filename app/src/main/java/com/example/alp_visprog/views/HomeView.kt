@@ -13,48 +13,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.alp_visprog.uiStates.HomeUIState
 import com.example.alp_visprog.viewModel.HomeViewModel
 import com.example.alp_visprog.ui.theme.BrandOrange
-import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import com.example.alp_visprog.R
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Suppress("UNUSED_PARAMETER")
 @Composable
 fun HomeView(
     modifier: Modifier = Modifier,
-    // Accept an optional HomeViewModel for testing; when null we'll obtain it at runtime.
-    homeViewModel: HomeViewModel? = null,
-    navController: NavController = rememberNavController()
+    navController: NavController
 ) {
-    // If we're in the Preview (inspection) mode, avoid instantiating the real ViewModel
-    val isPreview = LocalInspectionMode.current
-
-    if (isPreview) {
-        // Show a simple preview state without constructing model classes
-        HomeContent(
-            state = HomeUIState.Loading,
-            userLocation = "Preview Location",
-            onRefresh = {},
-            onFilterClick = { _, _ -> },
-            navController = navController,
-            modifier = modifier
-        )
-        return
-    }
-
-    // Normal runtime path: obtain the real ViewModel if not supplied
-    val viewModel = homeViewModel ?: viewModel(factory = HomeViewModel.Factory)
+    val viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
 
     LaunchedEffect(Unit) {
         viewModel.loadHelpRequests()
@@ -80,16 +57,15 @@ fun HomeContent(
     onRefresh: () -> Unit,
     onFilterClick: (String?, String?) -> Unit,
     modifier: Modifier = Modifier,
-    navController: NavController? = null
+    navController: NavController
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("Semua") }
-    var showFilters by remember { mutableStateOf(true) } // State for filter visibility
+    var showFilters by remember { mutableStateOf(true) }
 
     Box(
         modifier = modifier.fillMaxSize()
     ) {
-        // Supergraphic Background for entire home
         AsyncImage(
             model = R.drawable.pattern_tukerin,
             contentDescription = "Supergraphic Pattern",
@@ -99,25 +75,21 @@ fun HomeContent(
             contentScale = ContentScale.Crop
         )
 
-        // Main content on top of supergraphic
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // TOP BAR DESIGN
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp)
                     .background(BrandOrange)
             ) {
-                // Content on top
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Search Bar
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
@@ -136,7 +108,7 @@ fun HomeContent(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp), // Increased from 48.dp to prevent text cutoff
+                            .height(52.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = Color.White,
@@ -147,13 +119,11 @@ fun HomeContent(
                         singleLine = true
                     )
 
-                    // Location and Filter Toggle
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Location
                         Surface(
                             modifier = Modifier.weight(1f),
                             color = Color.White.copy(alpha = 0.9f),
@@ -179,7 +149,6 @@ fun HomeContent(
                             }
                         }
 
-                        // Filter Toggle Button
                         Surface(
                             modifier = Modifier.size(40.dp),
                             color = if (showFilters) Color.White else Color.White.copy(alpha = 0.6f),
@@ -201,7 +170,6 @@ fun HomeContent(
                 }
             }
 
-            // FILTER BUTTONS - EVENLY SPACED (conditionally shown)
             if (showFilters) {
                 Row(
                     modifier = Modifier
@@ -236,7 +204,7 @@ fun HomeContent(
                         selected = selectedFilter == "BARANG",
                         onClick = {
                             selectedFilter = "BARANG"
-                            onFilterClick("1", null) // categoryId 1 = Barang
+                            onFilterClick("1", null)
                         },
                         label = { Text("Barang") },
                         colors = FilterChipDefaults.filterChipColors(
@@ -259,7 +227,7 @@ fun HomeContent(
                         selected = selectedFilter == "JASA",
                         onClick = {
                             selectedFilter = "JASA"
-                            onFilterClick("2", null) // categoryId 2 = Jasa
+                            onFilterClick("2", null)
                         },
                         label = { Text("Jasa") },
                         colors = FilterChipDefaults.filterChipColors(
@@ -280,7 +248,6 @@ fun HomeContent(
                 }
             }
 
-            // CONTENT BASED ON STATE
             when (state) {
                 is HomeUIState.Loading -> {
                     Box(
@@ -350,34 +317,19 @@ fun HomeContent(
                             items(state.data) { helpRequest ->
                                 HelpRequestCard(
                                     request = helpRequest,
-                                    onAddToCart = {
-                                        // TODO: Add to cart functionality
-                                    },
+                                    onAddToCart = {},
                                     onContactSeller = {
-                                        navController?.navigate("create_exchange/${helpRequest.id}")
+                                        navController.navigate("create_exchange/${helpRequest.id}")
                                     },
                                     onProfileClick = { userId ->
-                                        navController?.navigate("Profile")
+                                        navController.navigate("Profile")
                                     }
                                 )
                             }
                         }
                     }
                 }
-
             }
-
         }
     }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun HomeViewPreview() {
-    HomeContent(
-        state = HomeUIState.Loading,
-        userLocation = "Preview Location",
-        onRefresh = {},
-        onFilterClick = { _, _ -> }
-    )
 }
