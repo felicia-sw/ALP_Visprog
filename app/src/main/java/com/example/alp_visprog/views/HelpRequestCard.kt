@@ -27,10 +27,9 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.alp_visprog.models.HelpRequestModel
 
-// --- Custom Colors based on your spec ---
-val CardBeige = Color(0xFFFCF8F3) // Light cream background
-val BrandOrange = Color(0xFFFF6B4A) // Orange action color
-val BrandTeal = Color(0xFF4ECDC4)   // Turquoise/Teal
+val CardBeige = Color(0xFFFCF8F3)
+val BrandOrange = Color(0xFFFF6B4A)
+val BrandTeal = Color(0xFF4ECDC4)
 val TextDarkGray = Color(0xFF333333)
 
 @Composable
@@ -50,21 +49,26 @@ fun HelpRequestCard(
             .shadow(4.dp, RoundedCornerShape(16.dp))
     ) {
         Column(
-            modifier = Modifier
-                .padding(16.dp)
+            modifier = Modifier.padding(16.dp)
         ) {
-            // --- HEADER SECTION ---
+            // HEADER SECTION - FIXED: Proper null check
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        println("DEBUG: Profile clicked in HelpRequestCard for userId: ${request.userId}")
-                        onProfileClick?.invoke(request.userId)
-                    }
+                    .then(
+                        if (onProfileClick != null) {
+                            Modifier.clickable {
+                                println("DEBUG: Profile clicked in HelpRequestCard for userId: ${request.userId}")
+                                onProfileClick.invoke(request.userId)
+                            }
+                        } else {
+                            Modifier
+                        }
+                    )
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. Seller Profile Image (Placeholder)
+                // Profile Image
                 Box(
                     modifier = Modifier
                         .size(48.dp)
@@ -81,10 +85,10 @@ fun HelpRequestCard(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // 2. Seller Name & Info
+                // Seller Name & Info
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "User #${request.userId}", // Placeholder name
+                        text = "User #${request.userId}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = TextDarkGray
@@ -108,12 +112,11 @@ fun HelpRequestCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // --- "MENAWARKAN" BADGE ---
-            // Simulating the "Orange Action Button" feel from the prompt
+            // "MENAWARKAN" BADGE
             Surface(
                 color = BrandOrange,
                 shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth(0.5f) // 50% width
+                modifier = Modifier.fillMaxWidth(0.5f)
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 6.dp)) {
                     Text("MENAWARKAN", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -122,7 +125,7 @@ fun HelpRequestCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // --- PRODUCT IMAGE ---
+            // PRODUCT IMAGE
             AsyncImage(
                 model = request.imageUrl,
                 contentDescription = request.nameOfProduct,
@@ -131,12 +134,12 @@ fun HelpRequestCard(
                     .fillMaxWidth()
                     .height(200.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color.LightGray) // Placeholder color while loading
+                    .background(Color.LightGray)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- PRODUCT TITLE ---
+            // PRODUCT TITLE
             Text(
                 text = request.nameOfProduct,
                 fontSize = 20.sp,
@@ -146,7 +149,7 @@ fun HelpRequestCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // --- DIVIDER WITH ICON ---
+            // DIVIDER WITH ICON
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -160,7 +163,7 @@ fun HelpRequestCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.SwapVert, // Up-down arrows
+                        imageVector = Icons.Outlined.SwapVert,
                         contentDescription = "Exchange",
                         tint = BrandTeal,
                         modifier = Modifier.size(16.dp)
@@ -171,7 +174,7 @@ fun HelpRequestCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // --- "MENCARI" SECTION ---
+            // "MENCARI" SECTION
             Row(verticalAlignment = Alignment.Top) {
                 Surface(
                     color = BrandTeal,
@@ -206,12 +209,11 @@ fun HelpRequestCard(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // --- BOTTOM ACTION BUTTONS ---
+            // BOTTOM ACTION BUTTONS
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 1. Add to Cart Button
                 Button(
                     onClick = onAddToCart,
                     colors = ButtonDefaults.buttonColors(containerColor = BrandOrange),
@@ -225,7 +227,6 @@ fun HelpRequestCard(
                     Text("Keranjang", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
 
-                // 2. Contact Seller Button
                 OutlinedButton(
                     onClick = onContactSeller,
                     border = BorderStroke(2.dp, BrandOrange),
@@ -241,5 +242,3 @@ fun HelpRequestCard(
         }
     }
 }
-
-

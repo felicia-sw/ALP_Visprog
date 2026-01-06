@@ -45,7 +45,7 @@ enum class AppView(val title: String, val icon: ImageVector? = null) {
     Home("Home", Icons.Filled.Home),
     Create(title = "Buat", Icons.Filled.Add),
     Profile(title = "Profil", Icons.Filled.Person),
-    ShoppingCart(title = "Keranjang", Icons.Filled.ShoppingCart) // Add this
+    ShoppingCart(title = "Keranjang", Icons.Filled.ShoppingCart)
 }
 
 data class BottonNavItem(val view: AppView, val label: String)
@@ -80,7 +80,7 @@ fun MyTopAppBar(
 fun CustomBottomNavigationBar(
     navController: NavController,
     currentDestination: NavDestination?,
-    onFabClick: () -> Unit, // Changed: Now takes a callback instead of navigating directly
+    onFabClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier) {
@@ -149,7 +149,7 @@ fun CustomBottomNavigationBar(
         }
 
         FloatingActionButton(
-            onClick = onFabClick, // Trigger the bottom sheet
+            onClick = onFabClick,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 0.dp)
@@ -177,18 +177,15 @@ fun AppRouting() {
     val currentRoute = currentDestination?.route
     val currentView = AppView.entries.find { it.name == currentRoute }
 
-    // Check if current route is authentication screen
     val isAuthScreen = currentRoute == "register" || currentRoute == "login"
     val authViewModel: AuthenticationViewModel = viewModel(factory = AuthenticationViewModel.Factory)
 
-    // --- Bottom Sheet State ---
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
     val scope = rememberCoroutineScope()
 
-    // Use single NavHost with conditional Scaffold
     Scaffold(
         topBar = {
             if (!isAuthScreen && currentRoute != AppView.Home.name) {
@@ -219,15 +216,15 @@ fun AppRouting() {
         ) {
             composable("register") {
                 RegisterView(
-                    navController = navController,
-                    authenticationViewModel = authViewModel
+                    navController = navController
                 )
             }
 
+            // FIXED: Pass authViewModel to LoginView
             composable("login") {
                 LoginView(
                     navController = navController,
-                    authenticationViewModel = authViewModel // Add this line
+                    authenticationViewModel = authViewModel
                 )
             }
 
@@ -236,6 +233,7 @@ fun AppRouting() {
             }
 
             composable(AppView.Profile.name) {
+                // Pass the authenticationViewModel to the ProfileView
                 ProfileView()
             }
 
@@ -268,16 +266,13 @@ fun AppRouting() {
             }
         }
 
-        // --- The Bottom Sheet Implementation ---
         if (showBottomSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showBottomSheet = false },
                 sheetState = sheetState
             ) {
-                // The Content of the Sheet
                 CreateHelpRequestView(
                     onBackClick = {
-                        // Close the sheet smoothly on success/cancel
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
                             if (!sheetState.isVisible) {
                                 showBottomSheet = false

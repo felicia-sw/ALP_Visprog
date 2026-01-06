@@ -27,11 +27,13 @@ import androidx.navigation.compose.rememberNavController
 import com.example.alp_visprog.uiStates.AuthenticationStatusUIState
 import com.example.alp_visprog.viewModel.AuthenticationViewModel
 
-
+// FIXED: Added authenticationViewModel parameter
 @Composable
-fun LoginView(navController: NavHostController?) {
-    val authViewModel: AuthenticationViewModel = viewModel(factory = AuthenticationViewModel.Factory)
-    val authStatus = authViewModel.authenticationStatus
+fun LoginView(
+    navController: NavHostController?,
+    authenticationViewModel: AuthenticationViewModel = viewModel(factory = AuthenticationViewModel.Factory)
+) {
+    val authStatus = authenticationViewModel.authenticationStatus
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -39,16 +41,14 @@ fun LoginView(navController: NavHostController?) {
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-    // Update ViewModel when email/password changes
     LaunchedEffect(email) {
-        authViewModel.changeEmailInput(email)
+        authenticationViewModel.changeEmailInput(email)
     }
 
     LaunchedEffect(password) {
-        authViewModel.changePasswordInput(password)
+        authenticationViewModel.changePasswordInput(password)
     }
 
-    // Handle authentication status changes
     LaunchedEffect(authStatus) {
         when (authStatus) {
             is AuthenticationStatusUIState.Failed -> {
@@ -72,8 +72,7 @@ fun LoginView(navController: NavHostController?) {
         color = backgroundColor
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
@@ -151,7 +150,6 @@ fun LoginView(navController: NavHostController?) {
 
             item { Spacer(modifier = Modifier.height(30.dp)) }
 
-            // Show error message if login fails
             if (showError) {
                 item {
                     Card(
@@ -183,7 +181,6 @@ fun LoginView(navController: NavHostController?) {
                 item { Spacer(modifier = Modifier.height(15.dp)) }
             }
 
-            // Form Section
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Email", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
@@ -235,7 +232,7 @@ fun LoginView(navController: NavHostController?) {
             }
 
             item {
-                 Row(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 30.dp),
@@ -252,7 +249,7 @@ fun LoginView(navController: NavHostController?) {
             item {
                 Button(
                     onClick = {
-                        navController?.let { authViewModel.login(it) }
+                        navController?.let { authenticationViewModel.login(it) }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -287,11 +284,10 @@ fun LoginView(navController: NavHostController?) {
                     }
                 }
             }
-             item { Spacer(modifier = Modifier.height(30.dp)) }
+            item { Spacer(modifier = Modifier.height(30.dp)) }
         }
     }
 }
-
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

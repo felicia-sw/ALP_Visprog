@@ -24,23 +24,18 @@ import com.example.alp_visprog.viewModel.HomeViewModel
 import com.example.alp_visprog.ui.theme.BrandOrange
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.draw.alpha
-import coil.compose.AsyncImage
-import com.example.alp_visprog.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("UNUSED_PARAMETER")
 @Composable
 fun HomeView(
     modifier: Modifier = Modifier,
-    // Accept an optional HomeViewModel for testing; when null we'll obtain it at runtime.
     homeViewModel: HomeViewModel? = null,
     navController: NavController = rememberNavController()
 ) {
-    // If we're in the Preview (inspection) mode, avoid instantiating the real ViewModel
     val isPreview = LocalInspectionMode.current
 
     if (isPreview) {
-        // Show a simple preview state without constructing model classes
         HomeContent(
             state = HomeUIState.Loading,
             userLocation = "Preview Location",
@@ -52,7 +47,6 @@ fun HomeView(
         return
     }
 
-    // Normal runtime path: obtain the real ViewModel if not supplied
     val viewModel = homeViewModel ?: viewModel(factory = HomeViewModel.Factory)
 
     LaunchedEffect(Unit) {
@@ -89,25 +83,21 @@ fun HomeContent(
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
     ) {
-        // NEW TOP BAR DESIGN
+        // TOP BAR DESIGN (FIXED)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(140.dp)
         ) {
-            // Translucent Supergraphic Background
-            // TODO: Replace with your actual supergraphic image
+            // Background
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(BrandOrange.copy(alpha = 0.9f))
                     .alpha(0.3f)
-            ) {
-                // Placeholder for supergraphic - add your image here
-                // AsyncImage(model = R.drawable.supergraphic, ...)
-            }
+            )
 
-            // Content on top of supergraphic
+            // Content
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -115,17 +105,18 @@ fun HomeContent(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                // LEFT: Logo (1:1 ratio, small)
+                // LEFT: Logo (FIXED - Using Material Icon instead)
                 Box(
                     modifier = Modifier
                         .size(80.dp)
                         .background(Color.White, RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    AsyncImage(
-                        model = R.drawable.app_icon_4,
+                    Icon(
+                        imageVector = Icons.Default.Handshake,
                         contentDescription = "Logo",
-                        modifier = Modifier.size(60.dp)
+                        modifier = Modifier.size(50.dp),
+                        tint = BrandOrange
                     )
                 }
 
@@ -197,7 +188,7 @@ fun HomeContent(
             }
         }
 
-        // FILTER BUTTONS - EVENLY SPACED
+        // FILTER BUTTONS
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -274,7 +265,7 @@ fun HomeContent(
             )
         }
 
-        // CONTENT BASED ON STATE
+        // CONTENT
         when (state) {
             is HomeUIState.Loading -> {
                 Box(
@@ -358,9 +349,7 @@ fun HomeContent(
                     }
                 }
             }
-
         }
-
     }
 }
 

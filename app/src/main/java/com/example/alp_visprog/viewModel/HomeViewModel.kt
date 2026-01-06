@@ -34,7 +34,7 @@ class HomeViewModel(
 
     companion object {
         private const val TAG = "HomeViewModel"
-        private const val TIMEOUT_MS = 10000L // 10 seconds timeout
+        private const val TIMEOUT_MS = 10000L
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -48,18 +48,15 @@ class HomeViewModel(
         }
     }
 
-    // StateFlow to manage UI state
     private val _homeUIState = MutableStateFlow<HomeUIState>(HomeUIState.Loading)
     val homeUIState: StateFlow<HomeUIState> = _homeUIState.asStateFlow()
 
-    // User location from profile
     var userLocation by mutableStateOf("Loading...")
         private set
 
     private var isRequestInProgress = false
 
     init {
-        // Fetch user location when ViewModel is created
         fetchUserLocation()
     }
 
@@ -91,7 +88,6 @@ class HomeViewModel(
         }
     }
 
-    // Fetch all help requests from backend
     fun loadHelpRequests() {
         if (isRequestInProgress) {
             Log.d(TAG, "loadHelpRequests: Request already in progress, skipping")
@@ -102,7 +98,6 @@ class HomeViewModel(
         _homeUIState.value = HomeUIState.Loading
         isRequestInProgress = true
 
-        // Add a timeout to prevent infinite loading
         viewModelScope.launch {
             delay(TIMEOUT_MS)
             if (_homeUIState.value is HomeUIState.Loading && isRequestInProgress) {
@@ -156,14 +151,12 @@ class HomeViewModel(
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    // Filter help requests by categoryId - type parameter should be a category ID number
+    // FIXED: Proper filter logic mapping BARANG/JASA to categoryId
     fun filterHelpRequests(type: String? = null, status: String? = null) {
         Log.d(TAG, "filterHelpRequests: Filtering by type=$type, status=$status")
         _homeUIState.value = HomeUIState.Loading
 
         try {
-            // Repository doesn't have a dedicated filter endpoint; fetch all and filter locally by categoryId
             val call = helpRequestRepository.getAllHelpRequests()
 
             call.enqueue(object : Callback<AllHelpResp> {
@@ -173,21 +166,21 @@ class HomeViewModel(
 
                     if (response.isSuccessful) {
                         val all = response.body()?.data ?: emptyList()
-                        val filtered = if (type.isNullOrBlank()) {
-                            all
-                        } else {
-                            // Try to parse type as categoryId integer, otherwise filter by product name
-                            val categoryId = type.toIntOrNull()
-                            if (categoryId != null) {
-                                all.filter { it.categoryId == categoryId }
-                            } else {
-                                // Fallback: search in product name
+
+                        // FIXED: Map "BARANG" -> categoryId 1, "JASA" -> categoryId 2
+                        val filtered = when {
+                            type.isNullOrBlank() -> all
+                            type == "BARANG" -> all.filter { it.categoryId == 1 }
+                            type == "JASA" -> all.filter { it.categoryId == 2 }
+                            else -> {
+                                // Fallback: search by name
                                 all.filter {
                                     it.nameOfProduct.contains(type, ignoreCase = true) ||
-                                    it.exchangeProductName.contains(type, ignoreCase = true)
+                                            it.exchangeProductName.contains(type, ignoreCase = true)
                                 }
                             }
                         }
+
                         Log.d(TAG, "filterHelpRequests: Filtered ${filtered.size} from ${all.size} total")
                         _homeUIState.value = HomeUIState.Success(filtered)
                     } else {
