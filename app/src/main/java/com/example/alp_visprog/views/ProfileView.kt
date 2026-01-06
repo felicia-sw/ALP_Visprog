@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.alp_visprog.models.HelpRequestModel
 import com.example.alp_visprog.ui.theme.BrandOrange
@@ -34,9 +36,10 @@ import com.example.alp_visprog.uiStates.ProfileStatusUIState
 import com.example.alp_visprog.viewModel.ProfileViewModel
 
 @Composable
-fun ProfileView() {
+fun ProfileView(navController: NavController? = null) {
     val vm: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
     var showEdit by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) { vm.fetchProfile() }
@@ -206,7 +209,7 @@ fun ProfileView() {
                                     }
 
                                     OutlinedButton(
-                                        onClick = { /* Settings action */ },
+                                        onClick = { showSettings = true },
                                         modifier = Modifier.size(56.dp),
                                         shape = CircleShape,
                                         colors = ButtonDefaults.outlinedButtonColors(
@@ -362,6 +365,20 @@ fun ProfileView() {
                         onSave = { fullName, location, bio ->
                             vm.updateProfile(fullName, location, bio)
                             showEdit = false
+                        }
+                    )
+                }
+
+                // Settings Dialog
+                if (showSettings) {
+                    SettingsModal(
+                        onDismiss = { showSettings = false },
+                        onLogout = {
+                            vm.logout()
+                            showSettings = false
+                            navController?.navigate("splash") {
+                                popUpTo(0) { inclusive = true }
+                            }
                         }
                     )
                 }
@@ -699,6 +716,100 @@ fun HelpRequestItemCard(helpRequest: HelpRequestModel, modifier: Modifier = Modi
                     fontSize = 12.sp,
                     color = if (helpRequest.isCheckout) BrandTeal else BrandOrange
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun SettingsModal(
+    onDismiss: () -> Unit,
+    onLogout: () -> Unit
+) {
+    // Full screen overlay with backdrop
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.5f))
+            .clickable(
+                onClick = { /* Prevent clicks from passing through */ },
+                indication = null,
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .wrapContentHeight()
+                .clickable(
+                    onClick = { /* Prevent clicks from passing through */ },
+                    indication = null,
+                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                ),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Pengaturan",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = Color.Black
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Logout Button
+                Button(
+                    onClick = onLogout,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Logout,
+                        contentDescription = "Logout",
+                        modifier = Modifier.size(20.dp),
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Keluar", fontSize = 16.sp, color = Color.White)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Cancel Button
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color.Gray
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0E0E0))
+                ) {
+                    Text("Batal", fontSize = 16.sp)
+                }
             }
         }
     }

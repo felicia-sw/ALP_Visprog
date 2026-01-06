@@ -71,8 +71,13 @@ class HomeViewModel(
             val bearer = "Bearer $token"
             profileRepository.viewProfile(bearer).enqueue(object : Callback<ProfileResponse> {
                 override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {
-                    if (res.isSuccessful && res.body() != null) {
-                        userLocation = res.body()!!.data.location
+                    // OLD CODE (CRASH PRONE):
+                    // userLocation = res.body()!!.data.location
+                    // NEW FIX:
+                    val responseBody = res.body()
+                    if (res.isSuccessful && responseBody != null) {
+                        // Safely get location, default to "Unknown" if null
+                        userLocation = responseBody.data?.location ?: "Unknown"
                         Log.d(TAG, "✅ User location fetched: $userLocation")
                     } else {
                         userLocation = "Unknown"

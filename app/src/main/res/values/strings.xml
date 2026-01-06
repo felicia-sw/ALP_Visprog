@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Tuker.In</string>
+    <string name="app_name">Tuker.in</string>
     <string name="title_activity_login">LoginActivity</string>
     <string name="title_activity_register">RegisterActivity</string>
     <string name="usernameText">Username</string>
