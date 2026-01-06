@@ -147,13 +147,13 @@ class CreateHelpRequestViewModel(
     fun submitHelpRequest() {
         // 1. Check Required Fields
         if (nameOfProduct.isBlank() || description.isBlank() || contactPhone.isBlank()) {
-            _dataStatus.value = CreateExchangeUIState.Error("Please fill in required fields.")
+            _dataStatus.value = CreateExchangeUIState.Error("Mohon isi semua field yang diperlukan.")
             return
         }
 
         // 2. Check Email Validity
         if (contactEmail.isNotEmpty() && !Patterns.EMAIL_ADDRESS.matcher(contactEmail).matches()) {
-            _dataStatus.value = CreateExchangeUIState.Error("Invalid email")
+            _dataStatus.value = CreateExchangeUIState.Error("Email tidak valid")
             return
         }
 
@@ -165,14 +165,18 @@ class CreateHelpRequestViewModel(
                 val token = userRepository.currentUserToken.first()
 
                 if (token == "Unknown" || token.isBlank()) {
-                    _dataStatus.value = CreateExchangeUIState.Error("User session not found. Please login again.")
+                    _dataStatus.value = CreateExchangeUIState.Error("Sesi tidak ditemukan. Silakan login kembali.")
                     return@launch
                 }
 
                 val bearerToken = "Bearer $token"
                 val finalImageUrl = selectedImageUri?.toString() ?: ""
 
-                Log.d("CreateHelpRequest", "🚀 Creating help request with token")
+                Log.d("CreateHelpRequest", "🚀 Membuat help request")
+                Log.d("CreateHelpRequest", "📝 Name: $nameOfProduct")
+                Log.d("CreateHelpRequest", "📝 Category: $categoryIdInput")
+                Log.d("CreateHelpRequest", "📝 Location: $location")
+                Log.d("CreateHelpRequest", "📝 User ID: $currentUserId")
 
                 val requestCall = helpRequestRepository.createHelpRequest(
                     bearerToken = bearerToken,
@@ -182,7 +186,7 @@ class CreateHelpRequestViewModel(
                     location = location,
                     imageUrl = finalImageUrl,
                     categoryId = categoryIdInput.toIntOrNull() ?: 1,
-                    userId = if (currentUserId != -1) currentUserId else 1, // Fallback to 1 if not decoded
+                    userId = if (currentUserId != -1) currentUserId else 1,
                     contactPhone = contactPhone,
                     contactEmail = contactEmail
                 )
@@ -194,14 +198,24 @@ class CreateHelpRequestViewModel(
                             _dataStatus.value = CreateExchangeUIState.Success
                         } else {
                             val errorBody = response.errorBody()?.string()
+                            val errorMessage = when (response.code()) {
+                                404 -> "Endpoint tidak ditemukan. Silakan periksa server Anda."
+                                401 -> "Tidak terautentikasi. Silakan login kembali."
+                                400 -> "Data permintaan tidak valid: $errorBody"
+                                500 -> "Kesalahan server: $errorBody"
+                                else -> "${response.code()}: ${response.message()}"
+                            }
                             Log.e("CreateHelpRequest", "❌ Failed: ${response.code()} - $errorBody")
-                            _dataStatus.value = CreateExchangeUIState.Error("Failed: ${response.message()}")
+                            Log.e("CreateHelpRequest", "❌ Request URL: ${call.request().url}")
+                            Log.e("CreateHelpRequest", "❌ Request Body: ${call.request().body}")
+                            _dataStatus.value = CreateExchangeUIState.Error(errorMessage)
                         }
                     }
 
                     override fun onFailure(call: Call<CreateHelpRequestResponse>, t: Throwable) {
                         Log.e("CreateHelpRequest", "❌ Network error: ${t.message}")
-                        _dataStatus.value = CreateExchangeUIState.Error("Error: ${t.localizedMessage}")
+                        Log.e("CreateHelpRequest", "❌ Stack trace: ", t)
+                        _dataStatus.value = CreateExchangeUIState.Error("Network error: ${t.localizedMessage}")
                     }
                 })
             } catch (e: Exception) {

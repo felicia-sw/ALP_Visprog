@@ -1,11 +1,9 @@
 package com.example.alp_visprog.repositories
 
-import com.example.alp_visprog.models.CreateHelpRequest
-import com.example.alp_visprog.models.CreateHelpRequestResponse
+import com.example.alp_visprog.models.CreateHelpRequestRequest
 import com.example.alp_visprog.models.GeneralResponse
 import com.example.alp_visprog.models.GetAllHelpRequestsResponse
 import com.example.alp_visprog.services.HelpRequestAPIService
-
 import retrofit2.Call
 
 class HelpRequestRepository(
@@ -15,35 +13,24 @@ class HelpRequestRepository(
         return helpRequestAPIService.getAllHelpRequests()
     }
 
-    fun getUserHelpRequests(bearerToken: String): Call<GetAllHelpRequestsResponse> {
-        return helpRequestAPIService.getUserHelpRequests(bearerToken)
-    }
-
     fun createHelpRequest(
-        bearerToken: String,
         nameOfProduct: String,
         description: String,
         exchangeProductName: String,
         location: String,
         imageUrl: String,
-        categoryId: Int,
-        userId: Int,
-        contactPhone: String,
-        contactEmail: String
-    ): Call<CreateHelpRequestResponse> {
+        categoryId: Int
+    ): Call<GeneralResponse> {
 
-        val request = CreateHelpRequest(
+        val request = CreateHelpRequestRequest(
             nameOfProduct = nameOfProduct,
             description = description,
             exchangeProductName = exchangeProductName,
             location = location,
             imageUrl = imageUrl,
-            categoryId = categoryId,
-            userId = userId,
-            contactPhone = contactPhone,
-            contactEmail = contactEmail
+            categoryId = categoryId
         )
 
-        return helpRequestAPIService.createHelpRequest(bearerToken, request)
+        return helpRequestAPIService.createHelpRequest(request)
     }
 }

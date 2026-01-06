@@ -53,6 +53,8 @@ fun HomeView(
     HomeContent(
         state = state,
         userLocation = viewModel.userLocation,
+        userLat = viewModel.userLat,
+        userLon = viewModel.userLon,
         onRefresh = { viewModel.loadHelpRequests() },
         onFilterClick = { type, status -> viewModel.filterHelpRequests(type, status) },
         onSearch = { query -> viewModel.searchHelpRequests(query) },
@@ -67,6 +69,8 @@ fun HomeView(
 fun HomeContent(
     state: HomeUIState,
     userLocation: String,
+    userLat: Double,
+    userLon: Double,
     onRefresh: () -> Unit,
     onFilterClick: (String?, String?) -> Unit,
     onSearch: (String) -> Unit,
@@ -452,6 +456,8 @@ fun HomeContent(
                                 if (isCompactView) {
                                     HelpRequestCompactCard(
                                         request = helpRequest,
+                                        userLat = userLat,
+                                        userLon = userLon,
                                         onAddToCart = {
                                             onAddToCart(helpRequest.id)
                                         },
@@ -465,6 +471,8 @@ fun HomeContent(
                                 } else {
                                     HelpRequestCard(
                                         request = helpRequest,
+                                        userLat = userLat,
+                                        userLon = userLon,
                                         onAddToCart = {
                                             onAddToCart(helpRequest.id)
                                         },

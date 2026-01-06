@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.alp_visprog.models.HelpRequestModel
+import com.example.alp_visprog.utils.DistanceHelper
 
 val CardBeige = Color(0xFFFCF8F3)
 val BrandOrange = Color(0xFFFF6B4A)
@@ -34,10 +35,22 @@ val TextDarkGray = Color(0xFF333333)
 @Composable
 fun HelpRequestCard(
     request: HelpRequestModel,
+    userLat: Double,
+    userLon: Double,
     onAddToCart: () -> Unit,
     onContactSeller: () -> Unit,
     onProfileClick: ((Int) -> Unit)? = null
 ) {
+    val distanceText = if (request.latitude != null && request.longitude != null) {
+        DistanceHelper.getDistance(
+            startLat = userLat,
+            startLon = userLon,
+            endLat = request.latitude,
+            endLon = request.longitude
+        )
+    } else {
+        "Unknown distance"
+    }
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = CardBeige),
@@ -98,7 +111,7 @@ fun HelpRequestCard(
                     ) {
                         Icon(Icons.Outlined.LocationOn, null, modifier = Modifier.size(12.dp), tint = Color.Gray)
                         Text(
-                            text = " ${request.location}",
+                            text = " ${request.location} • $distanceText",
                             fontSize = 12.sp,
                             color = Color.Gray,
                             maxLines = 1,
@@ -245,10 +258,23 @@ fun HelpRequestCard(
 @Composable
 fun HelpRequestCompactCard(
     request: HelpRequestModel,
+    userLat: Double,
+    userLon: Double,
     onAddToCart: () -> Unit,
     onContactSeller: () -> Unit,
     onProfileClick: ((Int) -> Unit)? = null
 ) {
+    val distanceText = if (request.latitude != null && request.longitude != null) {
+        DistanceHelper.getDistance(
+            startLat = userLat,
+            startLon = userLon,
+            endLat = request.latitude,
+            endLon = request.longitude
+        )
+    } else {
+        "Unknown distance"
+    }
+
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = CardBeige),
@@ -316,7 +342,7 @@ fun HelpRequestCompactCard(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Outlined.LocationOn, null, modifier = Modifier.size(10.dp), tint = Color.Gray)
                             Text(
-                                text = " ${request.location}",
+                                text = " ${request.location} • $distanceText",
                                 fontSize = 10.sp,
                                 color = Color.Gray,
                                 maxLines = 1,

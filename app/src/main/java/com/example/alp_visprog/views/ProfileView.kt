@@ -24,14 +24,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.compose.foundation.Image
 import coil.compose.AsyncImage
+import com.example.alp_visprog.R
 import com.example.alp_visprog.models.HelpRequestModel
 import com.example.alp_visprog.ui.theme.BrandOrange
 import com.example.alp_visprog.ui.theme.BrandTeal
@@ -77,6 +81,14 @@ fun ProfileView(navController: NavController? = null) {
             .fillMaxSize()
             .background(Color(0xFFFFFBF7))
     ) {
+        // Background pattern - using Image with painterResource for reliability
+        Image(
+            painter = painterResource(id = R.drawable.pattern_tukerin),
+            contentDescription = "Background Pattern",
+            modifier = Modifier.fillMaxSize().alpha(0.1f),
+            contentScale = ContentScale.Crop
+        )
+
         when (val state = vm.profileStatus) {
             is ProfileStatusUIState.Start -> {
                 // Initial state - show loading

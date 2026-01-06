@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.alp_visprog.R
 import com.example.alp_visprog.models.CartItem
 import com.example.alp_visprog.uiStates.ShoppingCartUIState
 import com.example.alp_visprog.viewModel.ShoppingCartViewModel
@@ -59,6 +61,14 @@ fun ShoppingCartView(
         containerColor = Color(0xFFFFFBF7)
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+            // Background pattern
+            AsyncImage(
+                model = R.drawable.pattern_tukerin,
+                contentDescription = "Background Pattern",
+                modifier = Modifier.fillMaxSize().alpha(0.3f),
+                contentScale = ContentScale.Crop
+            )
+
             when (uiState) {
                 is ShoppingCartUIState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

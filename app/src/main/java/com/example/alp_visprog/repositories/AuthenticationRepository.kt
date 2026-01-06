@@ -5,29 +5,40 @@ import com.example.alp_visprog.services.AuthenticationAPIService
 import retrofit2.Call
 
 interface AuthenticationRepositoryInterface {
-    fun register(username: String, email: String, password: String): Call<UserResponse>
+    fun register(
+        username: String,
+        email: String,
+        pass: String,
+        phone: String,
+        location: String,
+        lat: Double,
+        lon: Double
+    ): Call<UserResponse>
+
     fun login(email: String, password: String): Call<UserResponse>
 }
+
 class AuthenticationRepository(
-    private val authenticationAPIService: AuthenticationAPIService): AuthenticationRepositoryInterface{
-        override fun register(
-            username: String,
-            email: String,
-            password: String): Call<UserResponse> {
-
-            var registerMap = HashMap<String, String>()
-            registerMap["username"] = username
-            registerMap["email"] = email
-            registerMap["password"] = password
-            return authenticationAPIService.register(registerMap)
-        }
-
-        override fun login(email: String, password: String): Call<UserResponse> {
-            var loginMap = HashMap<String, String>()
-
-            loginMap["email"] = email
-            loginMap["password"] = password
-
-            return authenticationAPIService.login(loginMap)
-        }
+    private val authenticationAPIService: AuthenticationAPIService
+) : AuthenticationRepositoryInterface {
+    override fun register(
+        username: String,
+        email: String,
+        pass: String,
+        phone: String,
+        location: String,
+        lat: Double,
+        lon: Double
+    ): Call<UserResponse> {
+        return authenticationAPIService.register(username, email, pass, phone, location, lat, lon)
     }
+
+    override fun login(email: String, password: String): Call<UserResponse> {
+        val loginMap = HashMap<String, String>()
+
+        loginMap["email"] = email
+        loginMap["password"] = password
+
+        return authenticationAPIService.login(loginMap)
+    }
+}

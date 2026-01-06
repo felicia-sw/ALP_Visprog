@@ -1,6 +1,7 @@
 package com.example.alp_visprog.viewModel
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
@@ -36,7 +37,9 @@ class AuthenticationViewModel(
     private val authenticationRepository: AuthenticationRepositoryInterface,
     private val userRepository: UserRepositoryInterface
 ) : ViewModel() {
-
+    var locationNameInput by mutableStateOf("")
+    var latitudeInput by mutableDoubleStateOf(0.0)
+    var longitudeInput by mutableDoubleStateOf(0.0)
     var authenticationStatus: AuthenticationStatusUIState by mutableStateOf(
         AuthenticationStatusUIState.Start
     )
@@ -61,6 +64,9 @@ class AuthenticationViewModel(
     var emailInput by mutableStateOf("")
         private set
 
+    var phoneInput by mutableStateOf("")
+        private set
+
     fun changeEmailInput(emailInput: String) {
         this.emailInput = emailInput
     }
@@ -75,6 +81,10 @@ class AuthenticationViewModel(
 
     fun changePasswordInput(passwordInput: String) {
         this.passwordInput = passwordInput
+    }
+
+    fun changePhoneInput(phoneInput: String) {
+        this.phoneInput = phoneInput
     }
 
     fun changePasswordVisibility() {
@@ -192,8 +202,15 @@ class AuthenticationViewModel(
             authenticationStatus = AuthenticationStatusUIState.Loading
 
             try {
-                val call = authenticationRepository.register(usernameInput, emailInput, passwordInput)
-
+                val call = authenticationRepository.register(
+                    usernameInput,
+                    emailInput,
+                    passwordInput,
+                    phoneInput,
+                    locationNameInput, // New
+                    latitudeInput,     // New
+                    longitudeInput     // New
+                )
                 call.enqueue(object : Callback<UserResponse> {
                     override fun onResponse(call: Call<UserResponse>, res: Response<UserResponse>) {
                         if (res.isSuccessful && res.body() != null) {
@@ -216,7 +233,7 @@ class AuthenticationViewModel(
                                     } else {
                                         authenticationStatus = AuthenticationStatusUIState.Failed("Token error: Username missing")
                                     }
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     authenticationStatus = AuthenticationStatusUIState.Failed("Token invalid")
                                 }
                             } else {
@@ -229,7 +246,7 @@ class AuthenticationViewModel(
                                     val errorString = errorBody.string()
                                     try {
                                         val errorModel = Gson().fromJson(errorString, ErrorModel::class.java)
-                                        var msg = errorModel.errors
+                                        val msg = errorModel.errors
                                         when {
                                             msg.contains("username", ignoreCase = true) &&
                                                     msg.contains("Unique constraint", ignoreCase = true) -> {
@@ -244,7 +261,7 @@ class AuthenticationViewModel(
                                             }
                                             else -> msg
                                         }
-                                    } catch (e: Exception) {
+                                    } catch (_: Exception) {
                                         when {
                                             errorString.contains("username", ignoreCase = true) ->
                                                 "Username sudah digunakan. Silakan pilih username lain."
@@ -312,7 +329,7 @@ class AuthenticationViewModel(
                                         } else {
                                             authenticationStatus = AuthenticationStatusUIState.Failed("Token error: Username missing")
                                         }
-                                    } catch (e: Exception) {
+                                    } catch (_: Exception) {
                                         authenticationStatus = AuthenticationStatusUIState.Failed("Token invalid")
                                     }
                                 } else {
@@ -325,7 +342,7 @@ class AuthenticationViewModel(
                                         ErrorModel::class.java
                                     )
                                     error?.errors ?: "Login failed: ${res.code()}"
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     "Login failed: ${res.code()}"
                                 }
                                 authenticationStatus = AuthenticationStatusUIState.Failed(errorMessage)

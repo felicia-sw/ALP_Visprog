@@ -59,6 +59,12 @@ class HomeViewModel(
     var userLocation by mutableStateOf("Loading...")
         private set
 
+    var userLat by mutableStateOf(0.0)
+        private set
+
+    var userLon by mutableStateOf(0.0)
+        private set
+
     // NEW: Cart status message for user feedback
     private val _cartStatusMessage = MutableStateFlow<String?>(null)
     val cartStatusMessage: StateFlow<String?> = _cartStatusMessage.asStateFlow()
@@ -112,7 +118,9 @@ class HomeViewModel(
                             val responseBody = res.body()
                             if (res.isSuccessful && responseBody != null && responseBody.data != null) {
                                 userLocation = responseBody.data.location ?: "Unknown"
-                                Log.d(TAG, "✅ User location fetched: $userLocation")
+                                userLat = responseBody.data.latitude
+                                userLon = responseBody.data.longitude
+                                Log.d(TAG, "✅ User location fetched: $userLocation, lat: $userLat, lon: $userLon")
                             } else {
                                 userLocation = "Unknown"
                                 Log.d(TAG, "❌ Failed to fetch user location - Response unsuccessful or null")

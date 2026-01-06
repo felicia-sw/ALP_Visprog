@@ -15,6 +15,8 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        container = AppContainer(datastore)
+        // Backend URL for API calls (use 10.0.2.2 for Android emulator to access localhost)
+        val backendURL = "http://10.0.2.2:3000/"
+        container = AppContainer(datastore, backendURL)
     }
 }

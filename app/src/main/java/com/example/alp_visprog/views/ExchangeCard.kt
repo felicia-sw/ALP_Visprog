@@ -22,7 +22,7 @@ fun ExchangeCard(
     exchange: ExchangeModel,
     onDeleteClick: () -> Unit
 ) {
-    // Colors for accessibility (35-55 age group)
+    // Warna untuk aksesibilitas (usia 35-55)
     val darkText = Color(0xFF1C1B1F)
     val grayText = Color(0xFF49454F)
     val redWarning = Color(0xFFB00020)
@@ -42,9 +42,9 @@ fun ExchangeCard(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // INFO COLUMN
+            // KOLOM INFO
             Column(modifier = Modifier.weight(1f)) {
-                // 1. Name
+                // 1. Nama
                 Text(
                     text = exchange.name,
                     style = MaterialTheme.typography.titleLarge.copy(
@@ -56,16 +56,16 @@ fun ExchangeCard(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // 2. Phone (Always shown)
+                // 2. Telepon (Selalu ditampilkan)
                 Text(
-                    text = "Phone: ${exchange.phone}",
+                    text = "Telepon: ${exchange.phone}",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = grayText,
                         fontSize = 15.sp
                     )
                 )
 
-                // 3. Email (OPTIONAL - Only show if exists)
+                // 3. Email (OPSIONAL - hanya tampil jika ada)
                 if (!exchange.email.isNullOrEmpty()) {
                     Text(
                         text = "Email: ${exchange.email}",
@@ -76,7 +76,7 @@ fun ExchangeCard(
                     )
                 }
 
-                // 4. Description (OPTIONAL)
+                // 4. Deskripsi (OPSIONAL)
                 if (!exchange.description.isNullOrEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
@@ -90,14 +90,14 @@ fun ExchangeCard(
                 }
             }
 
-            // DELETE BUTTON
+            // TOMBOL HAPUS
             IconButton(
                 onClick = onDeleteClick,
                 modifier = Modifier.padding(start = 8.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete Offer",
+                    contentDescription = "Hapus Penawaran",
                     tint = redWarning
                 )
             }
@@ -105,32 +105,32 @@ fun ExchangeCard(
     }
 }
 
-// --- PREVIEW ---
+// --- PRATINJAU ---
 @Preview(showBackground = true, backgroundColor = 0xFFFEFDF5)
 @Composable
 fun ExchangeCardPreview() {
     ALP_VisprogTheme {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            // Case 1: All Data Present
+            // Kasus 1: Semua Data Ada
             ExchangeCard(
                 exchange = ExchangeModel(
                     id = 1,
-                    name = "Full Info Neighbor",
+                    name = "Tetangga dengan Informasi Lengkap",
                     phone = "08123456789",
                     email = "neighbor@example.com",
-                    description = "I have the ladder you need! Let's meet up.",
+                    description = "Saya punya tangga yang Anda butuhkan! Mari bertemu.",
                     helpRequestId = 101
                 ),
                 onDeleteClick = {}
             )
 
-            // Case 2: No Email, No Description (Minimal)
+            // Kasus 2: Tidak ada Email, Tidak ada Deskripsi (Minimal)
             ExchangeCard(
                 exchange = ExchangeModel(
                     id = 2,
-                    name = "Minimal Info Neighbor",
+                    name = "Tetangga Informasi Minimal",
                     phone = "08111222333",
-                    email = null, // Should not show "Email:" line
+                    email = null, // Tidak akan menampilkan baris "Email:"
                     description = null,
                     helpRequestId = 101
                 ),

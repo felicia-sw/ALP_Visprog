@@ -14,6 +14,7 @@ import com.example.alp_visprog.repositories.UserRepositoryInterface
 import com.example.alp_visprog.services.AuthenticationAPIService
 import com.example.alp_visprog.services.ExchangeAPIService
 import com.example.alp_visprog.services.HelpRequestAPIService
+import com.example.alp_visprog.services.LocationIQAPIService
 import com.example.alp_visprog.services.ShoppingCartAPIService
 import com.example.alp_visprog.services.ProfileAPIService
 import okhttp3.OkHttpClient
@@ -27,15 +28,13 @@ interface AppContainerInterface {
     val profileRepository: ProfileRepositoryInterface
     val exchangeRepository: ExchangeRepository
     val helpRequestRepository: HelpRequestRepository
-    val shoppingCartRepository: ShoppingCartRepository  // Added to interface
+    val shoppingCartRepository: ShoppingCartRepository
 }
 
 class AppContainer(
-    private val datastore: DataStore<Preferences>
+    private val datastore: DataStore<Preferences>,
+    private val backendURL: String
 ) : AppContainerInterface {
-
-    // Base URL - Use "http://10.0.2.2:3000/" for Android Emulator
-    private val backendURL = "http://10.0.2.2:3000/"
 
     // Init Retrofit with logging
     private val retrofit: Retrofit by lazy {
@@ -58,6 +57,15 @@ class AppContainer(
     }
 
     // ========== SERVICES ==========
+
+    private val locationIQRetrofit = Retrofit.Builder()
+        .baseUrl("https://us1.locationiq.com/")
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    val locationIQService: LocationIQAPIService by lazy {
+        locationIQRetrofit.create(LocationIQAPIService::class.java)
+    }
 
     private val authenticationRetrofitService: AuthenticationAPIService by lazy {
         retrofit.create(AuthenticationAPIService::class.java)

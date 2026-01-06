@@ -21,7 +21,9 @@ data class HelpRequestModel(
     val createdAt: String,
     val user: UserModel? = null,
     val contactPhone: String? = null,
-    val contactEmail: String? = null
+    val contactEmail: String? = null,
+    val latitude: Double?,
+    val longitude: Double?,
 )
 
 // 2. The Create Request (What we send to the API)
