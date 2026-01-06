@@ -38,6 +38,7 @@ import com.example.alp_visprog.views.LoginView
 import com.example.alp_visprog.views.ProfileView
 import com.example.alp_visprog.views.RegisterView
 import com.example.alp_visprog.views.ShoppingCartView
+import com.example.alp_visprog.views.SplashView
 import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.shadow
 
@@ -47,7 +48,6 @@ enum class AppView(val title: String, val icon: ImageVector? = null) {
     Profile(title = "Profil", Icons.Filled.Person),
     ShoppingCart(title = "Keranjang", Icons.Filled.ShoppingCart)
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyTopAppBar(
@@ -73,6 +73,7 @@ fun MyTopAppBar(
         }
     )
 }
+
 
 @Composable
 fun CustomBottomNavigationBar(
@@ -200,7 +201,8 @@ fun AppRouting() {
     val currentRoute = currentDestination?.route
     val currentView = AppView.entries.find { it.name == currentRoute }
 
-    val isAuthScreen = currentRoute == "register" || currentRoute == "login" || currentRoute == "loading"
+    // Check if current screen is auth screen or splash
+    val isAuthScreen = currentRoute == "register" || currentRoute == "login" || currentRoute == "loading" || currentRoute == "splash"
 
     // Removed "checkout" from the list of hidden bars
     val shouldShowGlobalTopBar = !isAuthScreen &&
@@ -238,9 +240,20 @@ fun AppRouting() {
 
         NavHost(
             navController = navController,
-            startDestination = "loading",
+            startDestination = "splash", // Changed from "loading" to "splash"
             modifier = if (isAuthScreen) Modifier else Modifier.padding(innerPadding)
         ) {
+            // Splash Screen - New entry point
+            composable("splash") {
+                SplashView(
+                    onSplashComplete = {
+                        navController.navigate("loading") {
+                            popUpTo("splash") { inclusive = true }
+                        }
+                    }
+                )
+            }
+
             composable("register") {
                 RegisterView(
                     navController = navController
