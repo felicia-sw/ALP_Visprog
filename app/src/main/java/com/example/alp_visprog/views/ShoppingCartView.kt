@@ -301,3 +301,8 @@ fun CartItemCard(item: CartItem, onDelete: () -> Unit) {
         }
     }
 }
+
+@Composable
+fun Padding(padding: Modifier, child: @Composable () -> Unit) {
+    Box(modifier = padding) { child() }
+}

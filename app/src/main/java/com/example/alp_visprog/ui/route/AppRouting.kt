@@ -40,6 +40,7 @@ import com.example.alp_visprog.views.RegisterView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.shadow
+import com.example.alp_visprog.views.CheckoutView
 
 enum class AppView(val title: String, val icon: ImageVector? = null) {
     Home("Home", Icons.Filled.Home),
@@ -281,6 +282,19 @@ fun AppRouting() {
             composable(AppView.ShoppingCart.name) {
                 com.example.alp_visprog.views.ShoppingCartView(
                     onBackClick = { navController.navigateUp() }
+                )
+            }
+
+            // ADD THIS NEW COMPOSABLE BLOCK
+            composable("checkout") {
+                CheckoutView(
+                    onBackClick = { navController.navigateUp() },
+                    onNavigateHome = {
+                        // Clear backstack and go home
+                        navController.navigate(AppView.Home.name) {
+                            popUpTo(AppView.Home.name) { inclusive = true }
+                        }
+                    }
                 )
             }
 
