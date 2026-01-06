@@ -30,7 +30,6 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
-import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.alp_visprog.viewModel.AuthenticationViewModel
 import com.example.alp_visprog.views.CreateHelpRequestView
@@ -220,7 +219,6 @@ fun AppRouting() {
                 )
             }
 
-            // FIXED: Pass authViewModel to LoginView
             composable("login") {
                 LoginView(
                     navController = navController,
@@ -233,7 +231,6 @@ fun AppRouting() {
             }
 
             composable(AppView.Profile.name) {
-                // Pass the authenticationViewModel to the ProfileView
                 ProfileView()
             }
 
