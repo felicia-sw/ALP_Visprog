@@ -175,61 +175,76 @@ class AuthenticationViewModel(
     }
 
     fun register(navController: NavHostController) {
+        // Client-side validation first
+        when {
+            usernameInput.isBlank() -> {
+                authenticationStatus = AuthenticationStatusUIState.Failed("Username tidak boleh kosong")
+                return
+            }
+            emailInput.isBlank() -> {
+                authenticationStatus = AuthenticationStatusUIState.Failed("Email tidak boleh kosong")
+                return
+            }
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(emailInput).matches() -> {
+                authenticationStatus = AuthenticationStatusUIState.Failed("Format email tidak valid")
+                return
+            }
+            passwordInput.length < 8 -> {
+                authenticationStatus = AuthenticationStatusUIState.Failed("Kata sandi minimal 8 karakter")
+                return
+            }
+            passwordInput != confirmPasswordInput -> {
+                authenticationStatus = AuthenticationStatusUIState.Failed("Kata sandi dan konfirmasi tidak cocok")
+                return
+            }
+        }
+
         viewModelScope.launch {
             authenticationStatus = AuthenticationStatusUIState.Loading
 
             try {
-                val call =
-                    authenticationRepository.register(usernameInput, emailInput, passwordInput)
+                val call = authenticationRepository.register(usernameInput, emailInput, passwordInput)
 
                 call.enqueue(object : Callback<UserResponse> {
                     override fun onResponse(call: Call<UserResponse>, res: Response<UserResponse>) {
-                        viewModelScope.launch {
-                            // Inside fun register(...)
-                            if (res.isSuccessful) {
-                                val token = res.body()!!.data.token
-                                val jwt = JWT(token!!)
-                                val username = jwt.getClaim("username").asString()
+                        if (res.isSuccessful) {
+                            val token = res.body()!!.data.token
+                            val jwt = JWT(token!!)
+                            val username = jwt.getClaim("username").asString()
 
-                                // [Modified] Pass 'emailInput' here
-                                savedUsernameToken(token, username!!, emailInput)
+                            savedUsernameToken(token, username!!, emailInput)
+                            authenticationStatus = AuthenticationStatusUIState.Success(res.body()!!.data)
 
-                                authenticationStatus =
-                                    AuthenticationStatusUIState.Success(res.body()!!.data)
-                                // ... rest of code
-
-                                resetViewModel()
-                                navController.navigate("Home") {
-                                    popUpTo("login") {
-                                        inclusive = true
-                                    }
-                                }
-                            } else {
-                                val errorMessage = try {
-                                    val error = Gson().fromJson(
-                                        res.errorBody()!!.charStream(),
-                                        ErrorModel::class.java
-                                    )
-                                    error?.errors ?: "Registration failed: ${res.code()}"
-                                } catch (e: Exception) {
-                                    "Registration failed: ${res.code()}"
-                                }
-
-                                authenticationStatus = AuthenticationStatusUIState.Failed(errorMessage)
+                            resetViewModel()
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
                             }
+                        } else {
+                            val errorMessage = try {
+                                Gson().fromJson(res.errorBody()!!.charStream(), ErrorModel::class.java).errors
+                            } catch (e: Exception) {
+                                when (res.code()) {
+                                    400 -> "Data tidak valid"
+                                    409 -> "Email atau username sudah terdaftar"
+                                    422 -> "Password tidak memenuhi syarat"
+                                    else -> "Registrasi gagal (${res.code()})"
+                                }
+                            }
+                            authenticationStatus = AuthenticationStatusUIState.Failed(errorMessage)
                         }
                     }
 
                     override fun onFailure(call: Call<UserResponse>, t: Throwable) {
-                        viewModelScope.launch {
-                            authenticationStatus =
-                                AuthenticationStatusUIState.Failed(t.localizedMessage ?: "Unknown error")
-                        }
+                        authenticationStatus = AuthenticationStatusUIState.Failed(
+                            t.localizedMessage ?: "Koneksi gagal. Periksa internet Anda."
+                        )
                     }
                 })
 
             } catch (error: IOException) {
-                authenticationStatus = AuthenticationStatusUIState.Failed(error.localizedMessage ?: "Network error")
+                authenticationStatus = AuthenticationStatusUIState.Failed(
+                    error.localizedMessage ?: "Kesalahan jaringan"
+                )
             }
         }
     }

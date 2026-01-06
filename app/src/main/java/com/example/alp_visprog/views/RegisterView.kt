@@ -1,5 +1,6 @@
 package com.example.alp_visprog.views
 
+import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,24 +15,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
-import com.example.alp_visprog.uiStates.AuthenticationStatusUIState
-import com.example.alp_visprog.viewModel.AuthenticationViewModel
+import androidx.navigation.NavController
 
 
 @Composable
-fun RegisterView(
-    navController: NavHostController?,
-    authenticationViewModel: AuthenticationViewModel
-) {
-    val authStatus = authenticationViewModel.authenticationStatus
-
+fun RegisterView(navController: NavController?) {
+    val context = LocalContext.current
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -39,44 +36,29 @@ fun RegisterView(
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-    var showError by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-
-    // Handle authentication status changes
-    LaunchedEffect(authStatus) {
-        when (authStatus) {
-            is AuthenticationStatusUIState.Failed -> {
-                showError = true
-                errorMessage = authStatus.errorMessage
-            }
-            is AuthenticationStatusUIState.Success -> {
-                showError = false
-            }
-            else -> {
-                showError = false
-            }
-        }
-    }
-
-    // Update ViewModel when fields change
-    LaunchedEffect(fullName) {
-        authenticationViewModel.changeUsernameInput(fullName)
-    }
-
-    LaunchedEffect(email) {
-        authenticationViewModel.changeEmailInput(email)
-    }
-
-    LaunchedEffect(password) {
-        authenticationViewModel.changePasswordInput(password)
-    }
-
-    LaunchedEffect(confirmPassword) {
-        authenticationViewModel.changeConfirmPasswordInput(confirmPassword)
-    }
 
     val orangeColor = Color(0xFFF9794D)
     val backgroundColor = Color(0xFFFFF6E3)
+
+    // Validation function
+    fun validateForm(): String? {
+        when {
+            fullName.isBlank() -> return "Nama lengkap tidak boleh kosong"
+            phoneNumber.isBlank() -> return "Nomor telepon tidak boleh kosong"
+            phoneNumber.length < 10 -> return "Nomor telepon minimal 10 digit"
+            !phoneNumber.matches(Regex("^[0-9]+$")) -> return "Nomor telepon hanya boleh berisi angka"
+            email.isBlank() -> return "Email tidak boleh kosong"
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> return "Format email tidak valid"
+            password.isBlank() -> return "Kata sandi tidak boleh kosong"
+            password.length < 8 -> return "Kata sandi minimal 8 karakter"
+            !password.any { it.isUpperCase() } -> return "Kata sandi harus mengandung huruf besar"
+            !password.any { it.isLowerCase() } -> return "Kata sandi harus mengandung huruf kecil"
+            !password.any { it.isDigit() } -> return "Kata sandi harus mengandung angka"
+            confirmPassword.isBlank() -> return "Konfirmasi kata sandi tidak boleh kosong"
+            password != confirmPassword -> return "Kata sandi dan konfirmasi tidak cocok"
+        }
+        return null
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -94,7 +76,7 @@ fun RegisterView(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(orangeColor)
-                        .padding(bottom = 20.dp, top = 20.dp),
+                        .padding(bottom = 30.dp, top = 20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
@@ -111,14 +93,14 @@ fun RegisterView(
                             tint = orangeColor
                         )
                     }
-                    Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "UnityGrid",
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(5.dp))
                     Text(
                         text = "Platform Barter Komunitas",
                         fontSize = 15.sp,
@@ -160,13 +142,13 @@ fun RegisterView(
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(15.dp)) }
+            item { Spacer(modifier = Modifier.height(30.dp)) }
 
             // Form Section
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Nama Lengkap", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
                         value = fullName,
                         onValueChange = { fullName = it },
@@ -177,7 +159,8 @@ fun RegisterView(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
                             unfocusedBorderColor = Color.LightGray,
-                        )
+                        ),
+                        singleLine = true
                     )
                 }
             }
@@ -186,7 +169,7 @@ fun RegisterView(
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Nomor Telepon", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
                         value = phoneNumber,
                         onValueChange = { phoneNumber = it },
@@ -198,7 +181,8 @@ fun RegisterView(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
                             unfocusedBorderColor = Color.LightGray,
-                        )
+                        ),
+                        singleLine = true
                     )
                 }
             }
@@ -207,7 +191,7 @@ fun RegisterView(
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Email", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -219,7 +203,8 @@ fun RegisterView(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
                             unfocusedBorderColor = Color.LightGray,
-                        )
+                        ),
+                        singleLine = true
                     )
                 }
             }
@@ -228,12 +213,12 @@ fun RegisterView(
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Kata Sandi", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Minimal 6 karakter", fontSize = 13.sp) },
+                        placeholder = { Text("Min. 8 karakter, huruf besar, kecil, angka", fontSize = 12.sp) },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -247,7 +232,8 @@ fun RegisterView(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
                             unfocusedBorderColor = Color.LightGray,
-                        )
+                        ),
+                        singleLine = true
                     )
                 }
             }
@@ -256,7 +242,7 @@ fun RegisterView(
             item {
                 Column(modifier = Modifier.padding(horizontal = 30.dp)) {
                     Text("Konfirmasi Kata Sandi", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
@@ -264,7 +250,7 @@ fun RegisterView(
                         placeholder = { Text("Ulangi kata sandi", fontSize = 13.sp) },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingIcon = {
-                             IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                                 val imageVector = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                                 Icon(imageVector = imageVector, contentDescription = "Toggle password visibility")
                             }
@@ -275,101 +261,60 @@ fun RegisterView(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
                             unfocusedBorderColor = Color.LightGray,
-                        )
+                        ),
+                        singleLine = true
                     )
                 }
             }
             item { Spacer(modifier = Modifier.height(30.dp)) }
 
-            // Show error message if registration fails
-            if (showError) {
-                item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 30.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(15.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = "Error",
-                                tint = Color.Red,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = errorMessage,
-                                color = Color.Red,
-                                fontSize = 13.sp
-                            )
-                        }
-                    }
-                }
-                item { Spacer(modifier = Modifier.height(15.dp)) }
-            }
-
             item {
                 Button(
                     onClick = {
-                        navController?.let { authenticationViewModel.register(it) }
+                        val error = validateForm()
+                        if (error != null) {
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                        } else {
+                            // TODO: Call registration API through ViewModel
+                            Toast.makeText(context, "Registrasi berhasil!", Toast.LENGTH_SHORT).show()
+                            navController?.navigate("main") {
+                                popUpTo("register") { inclusive = true }
+                            }
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 30.dp)
                         .height(50.dp),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = orangeColor),
-                    enabled = fullName.isNotEmpty() &&
-                             email.isNotEmpty() &&
-                             password.isNotEmpty() &&
-                             confirmPassword.isNotEmpty() &&
-                             password == confirmPassword &&
-                             password.length >= 6 &&
-                             authStatus !is AuthenticationStatusUIState.Loading
+                    colors = ButtonDefaults.buttonColors(containerColor = orangeColor)
                 ) {
-                    if (authStatus is AuthenticationStatusUIState.Loading) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    } else {
-                        Text("Daftar Akun", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text("Daftar Akun", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(20.dp)) }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Sudah punya akun?", color = Color.Gray, fontSize = 13.sp)
+                    TextButton(onClick = { navController?.navigate("login") }) {
+                        Text("Masuk", color = orangeColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
-
-            item { Spacer(modifier = Modifier.height(10.dp)) }
-
-            // Password validation hint
-            if (password.isNotEmpty() && password.length < 6) {
-                item {
-                    Text(
-                        text = "Password harus minimal 6 karakter",
-                        color = Color.Red,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(horizontal = 30.dp)
-                    )
-                }
-            }
-
-            // Password match validation
-            if (confirmPassword.isNotEmpty() && password != confirmPassword) {
-                item {
-                    Text(
-                        text = "Password tidak cocok",
-                        color = Color.Red,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(horizontal = 30.dp)
-                    )
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(10.dp)) }
+            item { Spacer(modifier = Modifier.height(30.dp)) }
         }
     }
+}
+
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun RegisterViewPreview() {
+    RegisterView(navController = null)
 }
