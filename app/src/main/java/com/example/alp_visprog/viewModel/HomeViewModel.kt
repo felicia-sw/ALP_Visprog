@@ -62,34 +62,41 @@ class HomeViewModel(
 
     private fun fetchUserLocation() {
         viewModelScope.launch {
-            val token = userRepository.currentUserToken.first()
-            if (token == "Unknown" || token.isBlank()) {
-                userLocation = "Unknown"
-                return@launch
-            }
-
-            val bearer = "Bearer $token"
-            profileRepository.viewProfile(bearer).enqueue(object : Callback<ProfileResponse> {
-                override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {
-                    // OLD CODE (CRASH PRONE):
-                    // userLocation = res.body()!!.data.location
-                    // NEW FIX:
-                    val responseBody = res.body()
-                    if (res.isSuccessful && responseBody != null) {
-                        // Safely get location, default to "Unknown" if null
-                        userLocation = responseBody.data?.location ?: "Unknown"
-                        Log.d(TAG, "✅ User location fetched: $userLocation")
-                    } else {
-                        userLocation = "Unknown"
-                        Log.d(TAG, "❌ Failed to fetch user location")
-                    }
-                }
-
-                override fun onFailure(call: Call<ProfileResponse>, t: Throwable) {
+            try {
+                val token = userRepository.currentUserToken.first()
+                if (token == "Unknown" || token.isBlank()) {
                     userLocation = "Unknown"
-                    Log.d(TAG, "💥 Error fetching user location: ${t.message}")
+                    Log.d(TAG, "❌ No token available for location fetch")
+                    return@launch
                 }
-            })
+
+                val bearer = "Bearer $token"
+                profileRepository.viewProfile(bearer).enqueue(object : Callback<ProfileResponse> {
+                    override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {
+                        try {
+                            val responseBody = res.body()
+                            if (res.isSuccessful && responseBody != null && responseBody.data != null) {
+                                userLocation = responseBody.data.location ?: "Unknown"
+                                Log.d(TAG, "✅ User location fetched: $userLocation")
+                            } else {
+                                userLocation = "Unknown"
+                                Log.d(TAG, "❌ Failed to fetch user location - Response unsuccessful or null")
+                            }
+                        } catch (e: Exception) {
+                            userLocation = "Unknown"
+                            Log.e(TAG, "❌ Exception while parsing location: ${e.message}", e)
+                        }
+                    }
+
+                    override fun onFailure(call: Call<ProfileResponse>, t: Throwable) {
+                        userLocation = "Unknown"
+                        Log.e(TAG, "💥 Error fetching user location: ${t.message}", t)
+                    }
+                })
+            } catch (e: Exception) {
+                userLocation = "Unknown"
+                Log.e(TAG, "💥 Exception in fetchUserLocation: ${e.message}", e)
+            }
         }
     }
 
@@ -156,7 +163,6 @@ class HomeViewModel(
         }
     }
 
-    // FIXED: Proper filter logic mapping BARANG/JASA to categoryId
     fun filterHelpRequests(type: String? = null, status: String? = null) {
         Log.d(TAG, "filterHelpRequests: Filtering by type=$type, status=$status")
         _homeUIState.value = HomeUIState.Loading
@@ -172,13 +178,11 @@ class HomeViewModel(
                     if (response.isSuccessful) {
                         val all = response.body()?.data ?: emptyList()
 
-                        // FIXED: Map "BARANG" -> categoryId 1, "JASA" -> categoryId 2
                         val filtered = when {
                             type.isNullOrBlank() -> all
                             type == "BARANG" -> all.filter { it.categoryId == 1 }
                             type == "JASA" -> all.filter { it.categoryId == 2 }
                             else -> {
-                                // Fallback: search by name
                                 all.filter {
                                     it.nameOfProduct.contains(type, ignoreCase = true) ||
                                             it.exchangeProductName.contains(type, ignoreCase = true)
@@ -228,7 +232,6 @@ class HomeViewModel(
                     if (response.isSuccessful) {
                         val all = response.body()?.data ?: emptyList()
 
-                        // Search across multiple fields
                         val searchResults = all.filter {
                             it.nameOfProduct.contains(query, ignoreCase = true) ||
                                     it.exchangeProductName.contains(query, ignoreCase = true) ||

@@ -34,6 +34,21 @@ class ProfileViewModel(
     private val helpRequestRepository: HelpRequestRepository
 ) : ViewModel() {
 
+    companion object {
+        private const val TAG = "ProfileViewModel"
+
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val app = (this[APPLICATION_KEY] as App)
+                ProfileViewModel(
+                    profileRepository = app.container.profileRepository,
+                    userRepository = app.container.userRepository,
+                    helpRequestRepository = app.container.helpRequestRepository
+                )
+            }
+        }
+    }
+
     var profileStatus: ProfileStatusUIState by mutableStateOf(ProfileStatusUIState.Start)
         private set
 
@@ -57,138 +72,216 @@ class ProfileViewModel(
 
     fun fetchProfile() {
         viewModelScope.launch {
-            profileStatus = ProfileStatusUIState.Loading
+            try {
+                profileStatus = ProfileStatusUIState.Loading
+                Log.d(TAG, "🔄 Starting to fetch profile...")
 
-            val token = userRepository.currentUserToken.first()
-            if (token == "Unknown" || token.isBlank()) {
-                profileStatus = ProfileStatusUIState.Failed("Token belum ada. Silakan login dulu.")
-                return@launch
-            }
+                val token = userRepository.currentUserToken.first()
+                Log.d(TAG, "🔑 Token retrieved: ${if (token == "Unknown") "Unknown" else "Valid (${token.take(20)}...)"}")
 
-            val bearer = "Bearer $token"
+                if (token == "Unknown" || token.isBlank()) {
+                    profileStatus = ProfileStatusUIState.Failed("Token belum ada. Silakan login dulu.")
+                    Log.e(TAG, "❌ No valid token available")
+                    return@launch
+                }
 
-            profileRepository.viewProfile(bearer).enqueue(object : Callback<ProfileResponse> {
-                override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {
-                    if (res.isSuccessful && res.body() != null) {
-                        profileStatus = ProfileStatusUIState.Success(res.body()!!.data)
-                        fetchUserHelpRequests()
-                    } else {
-                        val msg = try {
-                            val err = Gson().fromJson(res.errorBody()!!.charStream(), ErrorModel::class.java)
-                            err.errors
-                        } catch (_: Exception) {
-                            "Gagal memuat profile (${res.code()})"
+                val bearer = "Bearer $token"
+
+                profileRepository.viewProfile(bearer).enqueue(object : Callback<ProfileResponse> {
+                    override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {
+                        try {
+                            Log.d(TAG, "📥 Profile response received - Code: ${res.code()}")
+
+                            if (res.isSuccessful) {
+                                val responseBody = res.body()
+                                if (responseBody != null && responseBody.data != null) {
+                                    Log.d(TAG, "✅ Profile loaded successfully: ${responseBody.data.fullName}")
+                                    profileStatus = ProfileStatusUIState.Success(responseBody.data)
+                                    fetchUserHelpRequests()
+                                } else {
+                                    Log.e(TAG, "❌ Response body or data is null")
+                                    profileStatus = ProfileStatusUIState.Failed("Data profil tidak ditemukan")
+                                }
+                            } else {
+                                val msg = try {
+                                    val err = Gson().fromJson(res.errorBody()?.charStream(), ErrorModel::class.java)
+                                    err?.errors ?: "Gagal memuat profile (${res.code()})"
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "❌ Error parsing error response", e)
+                                    "Gagal memuat profile (${res.code()})"
+                                }
+                                Log.e(TAG, "❌ API error: $msg")
+                                profileStatus = ProfileStatusUIState.Failed(msg)
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "💥 Exception in onResponse", e)
+                            profileStatus = ProfileStatusUIState.Failed("Error: ${e.message}")
                         }
-                        profileStatus = ProfileStatusUIState.Failed(msg)
                     }
-                }
 
-                override fun onFailure(call: Call<ProfileResponse>, t: Throwable) {
-                    profileStatus = ProfileStatusUIState.Failed(t.localizedMessage ?: "Network error")
-                }
-            })
+                    override fun onFailure(call: Call<ProfileResponse>, t: Throwable) {
+                        Log.e(TAG, "💥 Network failure", t)
+                        profileStatus = ProfileStatusUIState.Failed(t.localizedMessage ?: "Network error")
+                    }
+                })
+            } catch (e: Exception) {
+                Log.e(TAG, "💥 Exception in fetchProfile", e)
+                profileStatus = ProfileStatusUIState.Failed("Error: ${e.message}")
+            }
         }
     }
 
     fun fetchUserHelpRequests() {
         viewModelScope.launch {
-            isLoadingHelpRequests = true
-            Log.d("ProfileViewModel", "🔄 Starting to fetch user help requests...")
+            try {
+                isLoadingHelpRequests = true
+                Log.d(TAG, "🔄 Starting to fetch user help requests...")
 
-            val token = userRepository.currentUserToken.first()
-            if (token == "Unknown" || token.isBlank()) {
-                isLoadingHelpRequests = false
-                Log.d("ProfileViewModel", "❌ No token available")
-                totalTawaran = 0
-                totalBertukar = 0
-                totalProses = 0
-                return@launch
-            }
-
-            val bearer = "Bearer $token"
-            Log.d("ProfileViewModel", "🔑 Token: ${token.take(20)}...")
-
-            helpRequestRepository.getUserHelpRequests(bearer).enqueue(object : Callback<GetAllHelpRequestsResponse> {
-                override fun onResponse(
-                    call: Call<GetAllHelpRequestsResponse>,
-                    res: Response<GetAllHelpRequestsResponse>
-                ) {
+                val token = userRepository.currentUserToken.first()
+                if (token == "Unknown" || token.isBlank()) {
                     isLoadingHelpRequests = false
-                    Log.d("ProfileViewModel", "📥 Response received - Code: ${res.code()}")
-
-                    if (res.isSuccessful && res.body() != null) {
-                        userHelpRequests = res.body()!!.data
-                        Log.d("ProfileViewModel", "✅ Success! Found ${userHelpRequests.size} help requests")
-                        calculateStatistics()
-                        Log.d("ProfileViewModel", "📊 Stats - Tawaran: $totalTawaran, Bertukar: $totalBertukar, Proses: $totalProses")
-                    } else {
-                        Log.d("ProfileViewModel", "❌ API call failed - Code: ${res.code()}")
-                        try {
-                            val errorBody = res.errorBody()?.string()
-                            Log.d("ProfileViewModel", "Error body: $errorBody")
-                        } catch (e: Exception) {
-                            Log.d("ProfileViewModel", "Could not read error body")
-                        }
-                        userHelpRequests = emptyList()
-                        totalTawaran = 0
-                        totalBertukar = 0
-                        totalProses = 0
-                    }
-                }
-
-                override fun onFailure(call: Call<GetAllHelpRequestsResponse>, t: Throwable) {
-                    isLoadingHelpRequests = false
-                    Log.d("ProfileViewModel", "💥 Network error: ${t.message}")
-                    Log.e("ProfileViewModel", "Error details", t)
-                    userHelpRequests = emptyList()
+                    Log.e(TAG, "❌ No token available for help requests")
                     totalTawaran = 0
                     totalBertukar = 0
                     totalProses = 0
+                    return@launch
                 }
-            })
+
+                val bearer = "Bearer $token"
+                Log.d(TAG, "🔑 Token: ${token.take(20)}...")
+
+                helpRequestRepository.getUserHelpRequests(bearer).enqueue(object : Callback<GetAllHelpRequestsResponse> {
+                    override fun onResponse(
+                        call: Call<GetAllHelpRequestsResponse>,
+                        res: Response<GetAllHelpRequestsResponse>
+                    ) {
+                        try {
+                            isLoadingHelpRequests = false
+                            Log.d(TAG, "📥 Help requests response - Code: ${res.code()}")
+
+                            if (res.isSuccessful) {
+                                val responseBody = res.body()
+                                if (responseBody != null && responseBody.data != null) {
+                                    userHelpRequests = responseBody.data
+                                    Log.d(TAG, "✅ Success! Found ${userHelpRequests.size} help requests")
+                                    calculateStatistics()
+                                    Log.d(TAG, "📊 Stats - Tawaran: $totalTawaran, Bertukar: $totalBertukar, Proses: $totalProses")
+                                } else {
+                                    Log.e(TAG, "❌ Response body or data is null")
+                                    userHelpRequests = emptyList()
+                                    resetStatistics()
+                                }
+                            } else {
+                                Log.e(TAG, "❌ API call failed - Code: ${res.code()}")
+                                try {
+                                    val errorBody = res.errorBody()?.string()
+                                    Log.e(TAG, "Error body: $errorBody")
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Could not read error body", e)
+                                }
+                                userHelpRequests = emptyList()
+                                resetStatistics()
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "💥 Exception in help requests onResponse", e)
+                            isLoadingHelpRequests = false
+                            userHelpRequests = emptyList()
+                            resetStatistics()
+                        }
+                    }
+
+                    override fun onFailure(call: Call<GetAllHelpRequestsResponse>, t: Throwable) {
+                        isLoadingHelpRequests = false
+                        Log.e(TAG, "💥 Network error in help requests", t)
+                        userHelpRequests = emptyList()
+                        resetStatistics()
+                    }
+                })
+            } catch (e: Exception) {
+                Log.e(TAG, "💥 Exception in fetchUserHelpRequests", e)
+                isLoadingHelpRequests = false
+                userHelpRequests = emptyList()
+                resetStatistics()
+            }
         }
     }
 
     private fun calculateStatistics() {
-        totalTawaran = userHelpRequests.size
-        totalBertukar = userHelpRequests.count { it.isCheckout }
-        totalProses = userHelpRequests.count { !it.isCheckout }
+        try {
+            totalTawaran = userHelpRequests.size
+            totalBertukar = userHelpRequests.count { it.isCheckout }
+            totalProses = userHelpRequests.count { !it.isCheckout }
+            Log.d(TAG, "✅ Statistics calculated successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error calculating statistics", e)
+            resetStatistics()
+        }
+    }
+
+    private fun resetStatistics() {
+        totalTawaran = 0
+        totalBertukar = 0
+        totalProses = 0
     }
 
     fun updateProfile(fullName: String, location: String, bio: String?) {
         viewModelScope.launch {
-            updateStatus = UpdateProfileStatusUIState.Loading
+            try {
+                updateStatus = UpdateProfileStatusUIState.Loading
+                Log.d(TAG, "🔄 Starting profile update...")
 
-            val token = userRepository.currentUserToken.first()
-            if (token == "Unknown" || token.isBlank()) {
-                updateStatus = UpdateProfileStatusUIState.Failed("Token belum ada. Silakan login dulu.")
-                return@launch
-            }
+                val token = userRepository.currentUserToken.first()
+                if (token == "Unknown" || token.isBlank()) {
+                    updateStatus = UpdateProfileStatusUIState.Failed("Token belum ada. Silakan login dulu.")
+                    Log.e(TAG, "❌ No token available for update")
+                    return@launch
+                }
 
-            val bearer = "Bearer $token"
-            val req = UpdateProfileRequest(fullName = fullName, location = location, bio = bio)
+                val bearer = "Bearer $token"
+                val req = UpdateProfileRequest(fullName = fullName, location = location, bio = bio)
 
-            profileRepository.updateProfile(bearer, req).enqueue(object : Callback<ProfileResponse> {
-                override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {
-                    if (res.isSuccessful && res.body() != null) {
-                        val profile = res.body()!!.data
-                        updateStatus = UpdateProfileStatusUIState.Success(profile)
-                        profileStatus = ProfileStatusUIState.Success(profile)
-                    } else {
-                        val msg = try {
-                            val err = Gson().fromJson(res.errorBody()!!.charStream(), ErrorModel::class.java)
-                            err.errors
-                        } catch (_: Exception) {
-                            "Gagal update profile (${res.code()})"
+                profileRepository.updateProfile(bearer, req).enqueue(object : Callback<ProfileResponse> {
+                    override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {
+                        try {
+                            Log.d(TAG, "📥 Update response - Code: ${res.code()}")
+
+                            if (res.isSuccessful) {
+                                val responseBody = res.body()
+                                if (responseBody != null && responseBody.data != null) {
+                                    val profile = responseBody.data
+                                    Log.d(TAG, "✅ Profile updated successfully")
+                                    updateStatus = UpdateProfileStatusUIState.Success(profile)
+                                    profileStatus = ProfileStatusUIState.Success(profile)
+                                } else {
+                                    Log.e(TAG, "❌ Update response body is null")
+                                    updateStatus = UpdateProfileStatusUIState.Failed("Gagal update profile")
+                                }
+                            } else {
+                                val msg = try {
+                                    val err = Gson().fromJson(res.errorBody()?.charStream(), ErrorModel::class.java)
+                                    err?.errors ?: "Gagal update profile (${res.code()})"
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "❌ Error parsing update error", e)
+                                    "Gagal update profile (${res.code()})"
+                                }
+                                Log.e(TAG, "❌ Update error: $msg")
+                                updateStatus = UpdateProfileStatusUIState.Failed(msg)
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "💥 Exception in update onResponse", e)
+                            updateStatus = UpdateProfileStatusUIState.Failed("Error: ${e.message}")
                         }
-                        updateStatus = UpdateProfileStatusUIState.Failed(msg)
                     }
-                }
 
-                override fun onFailure(call: Call<ProfileResponse>, t: Throwable) {
-                    updateStatus = UpdateProfileStatusUIState.Failed(t.localizedMessage ?: "Network error")
-                }
-            })
+                    override fun onFailure(call: Call<ProfileResponse>, t: Throwable) {
+                        Log.e(TAG, "💥 Network failure in update", t)
+                        updateStatus = UpdateProfileStatusUIState.Failed(t.localizedMessage ?: "Network error")
+                    }
+                })
+            } catch (e: Exception) {
+                Log.e(TAG, "💥 Exception in updateProfile", e)
+                updateStatus = UpdateProfileStatusUIState.Failed("Error: ${e.message}")
+            }
         }
     }
 
@@ -198,21 +291,14 @@ class ProfileViewModel(
 
     fun logout() {
         viewModelScope.launch {
-            userRepository.saveUserToken("")
-            userRepository.saveUsername("")
-            userRepository.saveUserEmail("")
-        }
-    }
-
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val app = (this[APPLICATION_KEY] as App)
-                ProfileViewModel(
-                    profileRepository = app.container.profileRepository,
-                    userRepository = app.container.userRepository,
-                    helpRequestRepository = app.container.helpRequestRepository
-                )
+            try {
+                Log.d(TAG, "🚪 Logging out...")
+                userRepository.saveUserToken("")
+                userRepository.saveUsername("")
+                userRepository.saveUserEmail("")
+                Log.d(TAG, "✅ Logout successful")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Error during logout", e)
             }
         }
     }

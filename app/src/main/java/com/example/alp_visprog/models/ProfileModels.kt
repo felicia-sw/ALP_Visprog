@@ -1,6 +1,6 @@
 package com.example.alp_visprog.models
 
-data class ProfileResponse(val data: ProfileModel)
+data class ProfileResponse(val data: ProfileModel?)
 
 data class ProfileModel(
     val username: String,

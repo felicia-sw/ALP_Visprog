@@ -234,19 +234,55 @@ class AuthenticationViewModel(
                                     authenticationStatus = AuthenticationStatusUIState.Failed("Token invalid")
                                 }
                             } else {
-                                authenticationStatus = AuthenticationStatusUIState.Failed("Login berhasil tetapi token kosong")
+                                authenticationStatus = AuthenticationStatusUIState.Failed("Registrasi berhasil tetapi token kosong")
                             }
                         } else {
+                            // Enhanced error handling for registration
                             val errorMessage = try {
                                 val errorBody = res.errorBody()
                                 if (errorBody != null) {
-                                    val errorModel = Gson().fromJson(errorBody.charStream(), ErrorModel::class.java)
-                                    errorModel.errors
+                                    val errorString = errorBody.string()
+
+                                    // Try to parse as ErrorModel
+                                    try {
+                                        val errorModel = Gson().fromJson(errorString, ErrorModel::class.java)
+                                        var msg = errorModel.errors
+
+                                        // Make error messages more user-friendly
+                                        when {
+                                            msg.contains("username", ignoreCase = true) &&
+                                                    msg.contains("Unique constraint", ignoreCase = true) -> {
+                                                "Username sudah digunakan. Silakan pilih username lain."
+                                            }
+                                            msg.contains("email", ignoreCase = true) &&
+                                                    msg.contains("Unique constraint", ignoreCase = true) -> {
+                                                "Email sudah terdaftar. Silakan gunakan email lain atau login."
+                                            }
+                                            msg.contains("Unique constraint", ignoreCase = true) -> {
+                                                "Username atau email sudah digunakan. Silakan coba yang lain."
+                                            }
+                                            else -> msg
+                                        }
+                                    } catch (e: Exception) {
+                                        // If not ErrorModel format, return raw error
+                                        when {
+                                            errorString.contains("username", ignoreCase = true) ->
+                                                "Username sudah digunakan. Silakan pilih username lain."
+                                            errorString.contains("email", ignoreCase = true) ->
+                                                "Email sudah terdaftar. Silakan gunakan email lain."
+                                            else -> "Registrasi gagal: ${res.code()}"
+                                        }
+                                    }
                                 } else {
-                                    "Terjadi kesalahan (${res.code()})"
+                                    when (res.code()) {
+                                        400 -> "Data tidak valid. Periksa kembali input Anda."
+                                        409 -> "Username atau email sudah terdaftar."
+                                        500 -> "Terjadi kesalahan server. Coba lagi nanti."
+                                        else -> "Registrasi gagal (${res.code()})"
+                                    }
                                 }
                             } catch (e: Exception) {
-                                "Gagal memproses error: ${res.code()}"
+                                "Gagal memproses error: ${e.message ?: "Unknown"}"
                             }
 
                             authenticationStatus = AuthenticationStatusUIState.Failed(errorMessage)
@@ -337,7 +373,7 @@ class AuthenticationViewModel(
         }
     }
 
-// [Modified] Accept email as a parameter
+    // [Modified] Accept email as a parameter
     private fun savedUsernameToken(token: String, username: String, email: String) {
         viewModelScope.launch {
             userRepository.saveUserToken(token)
