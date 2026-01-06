@@ -24,7 +24,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import com.example.alp_visprog.R
-import androidx.compose.ui.draw.shadow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,21 +85,21 @@ fun HomeContent(
         )
 
         Column(modifier = Modifier.fillMaxSize()) {
-            // IMPROVED: Enhanced header with better contrast
-            Box(
+            // Enhanced header with better contrast
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(160.dp)
+                    .height(140.dp)
                     .background(BrandOrange)
-                    .shadow(8.dp)
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                // Search Bar with Shopping Cart Button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Search Bar
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
@@ -126,8 +125,8 @@ fun HomeContent(
                             }
                         },
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
+                            .weight(1f)
+                            .height(44.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = Color.White,
@@ -135,77 +134,96 @@ fun HomeContent(
                             unfocusedBorderColor = Color.Transparent,
                             focusedBorderColor = BrandOrange.copy(alpha = 0.5f)
                         ),
+                        textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
                         singleLine = true
                     )
 
-                    // Location and View Controls
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Shopping Cart Button
+                    Surface(
+                        modifier = Modifier.size(44.dp),
+                        color = Color.White,
+                        shape = RoundedCornerShape(8.dp),
+                        onClick = { navController.navigate("ShoppingCart") },
+                        shadowElevation = 2.dp
                     ) {
-                        // Location
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            color = Color.White,
-                            shape = RoundedCornerShape(8.dp),
-                            shadowElevation = 2.dp
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.LocationOn,
-                                    contentDescription = "Location",
-                                    tint = BrandOrange,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = userLocation,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF333333),
-                                    maxLines = 1
-                                )
-                            }
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingCart,
+                                contentDescription = "Shopping Cart",
+                                tint = BrandOrange,
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
+                    }
+                }
 
-                        // View Toggle
-                        Surface(
-                            modifier = Modifier.size(44.dp),
-                            color = if (isCompactView) BrandOrange else Color.White,
-                            shape = RoundedCornerShape(8.dp),
-                            onClick = { isCompactView = !isCompactView },
-                            shadowElevation = 2.dp
+                // Location and View Controls
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Location
+                    Surface(
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        color = Color.White,
+                        shape = RoundedCornerShape(8.dp),
+                        shadowElevation = 2.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = if (isCompactView) Icons.Default.ViewAgenda else Icons.Default.ViewStream,
-                                    contentDescription = "Toggle View",
-                                    tint = if (isCompactView) Color.White else BrandOrange,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Location",
+                                tint = BrandOrange,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = userLocation,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF333333),
+                                maxLines = 1
+                            )
                         }
+                    }
 
-                        // Filter Toggle
-                        Surface(
-                            modifier = Modifier.size(44.dp),
-                            color = if (showFilters) BrandOrange else Color.White,
-                            shape = RoundedCornerShape(8.dp),
-                            onClick = { showFilters = !showFilters },
-                            shadowElevation = 2.dp
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.FilterList,
-                                    contentDescription = "Toggle Filters",
-                                    tint = if (showFilters) Color.White else BrandOrange,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                    // View Toggle
+                    Surface(
+                        modifier = Modifier.size(44.dp),
+                        color = if (isCompactView) BrandOrange else Color.White,
+                        shape = RoundedCornerShape(8.dp),
+                        onClick = { isCompactView = !isCompactView },
+                        shadowElevation = 2.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (isCompactView) Icons.Default.ViewAgenda else Icons.Default.ViewStream,
+                                contentDescription = "Toggle View",
+                                tint = if (isCompactView) Color.White else BrandOrange,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+
+                    // Filter Toggle
+                    Surface(
+                        modifier = Modifier.size(44.dp),
+                        color = if (showFilters) BrandOrange else Color.White,
+                        shape = RoundedCornerShape(8.dp),
+                        onClick = { showFilters = !showFilters },
+                        shadowElevation = 2.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.FilterList,
+                                contentDescription = "Toggle Filters",
+                                tint = if (showFilters) Color.White else BrandOrange,
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                     }
                 }
@@ -215,8 +233,8 @@ fun HomeContent(
             if (showFilters) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    color = Color.White,
-                    shadowElevation = 4.dp
+                    color = Color.Transparent,
+                    shadowElevation = 0.dp
                 ) {
                     Row(
                         modifier = Modifier
