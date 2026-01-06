@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,9 +33,11 @@ import androidx.navigation.navArgument
 import com.example.alp_visprog.views.CreateHelpRequestView
 import com.example.alp_visprog.views.ExchangeListView
 import com.example.alp_visprog.views.HomeView
+import com.example.alp_visprog.views.LoadingView
 import com.example.alp_visprog.views.LoginView
 import com.example.alp_visprog.views.ProfileView
 import com.example.alp_visprog.views.RegisterView
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 enum class AppView(val title: String, val icon: ImageVector? = null) {
@@ -170,7 +173,7 @@ fun AppRouting() {
     val currentRoute = currentDestination?.route
     val currentView = AppView.entries.find { it.name == currentRoute }
 
-    val isAuthScreen = currentRoute == "register" || currentRoute == "login"
+    val isAuthScreen = currentRoute == "register" || currentRoute == "login" || currentRoute == "loading"
 
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(
@@ -203,7 +206,7 @@ fun AppRouting() {
 
         NavHost(
             navController = navController,
-            startDestination = "login",
+            startDestination = "loading",
             modifier = if (isAuthScreen) Modifier else Modifier.padding(innerPadding)
         ) {
             composable("register") {
@@ -251,6 +254,18 @@ fun AppRouting() {
             composable(AppView.ShoppingCart.name) {
                 com.example.alp_visprog.views.ShoppingCartView(
                     onBackClick = { navController.navigateUp() }
+                )
+            }
+
+            composable("loading") {
+                LoadingView(
+                    onTimeout = {
+                        navController.navigate("login") {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
                 )
             }
         }
