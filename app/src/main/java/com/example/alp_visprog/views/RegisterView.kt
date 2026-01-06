@@ -1,5 +1,6 @@
 package com.example.alp_visprog.views
 
+import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -21,11 +23,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+// FIXED: Import NavHostController
+import androidx.navigation.NavHostController
 
-
+// FIXED: Changed parameter type to NavHostController
 @Composable
-fun RegisterView(navController: NavController?) {
+fun RegisterView(navController: NavHostController?) {
+    val context = LocalContext.current
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -36,6 +40,26 @@ fun RegisterView(navController: NavController?) {
 
     val orangeColor = Color(0xFFF9794D)
     val backgroundColor = Color(0xFFFFF6E3)
+
+    // Validation function
+    fun validateForm(): String? {
+        when {
+            fullName.isBlank() -> return "Nama lengkap tidak boleh kosong"
+            phoneNumber.isBlank() -> return "Nomor telepon tidak boleh kosong"
+            phoneNumber.length < 10 -> return "Nomor telepon minimal 10 digit"
+            !phoneNumber.matches(Regex("^[0-9]+$")) -> return "Nomor telepon hanya boleh berisi angka"
+            email.isBlank() -> return "Email tidak boleh kosong"
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> return "Format email tidak valid"
+            password.isBlank() -> return "Kata sandi tidak boleh kosong"
+            password.length < 8 -> return "Kata sandi minimal 8 karakter"
+            !password.any { it.isUpperCase() } -> return "Kata sandi harus mengandung huruf besar"
+            !password.any { it.isLowerCase() } -> return "Kata sandi harus mengandung huruf kecil"
+            !password.any { it.isDigit() } -> return "Kata sandi harus mengandung angka"
+            confirmPassword.isBlank() -> return "Konfirmasi kata sandi tidak boleh kosong"
+            password != confirmPassword -> return "Kata sandi dan konfirmasi tidak cocok"
+        }
+        return null
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -136,7 +160,8 @@ fun RegisterView(navController: NavController?) {
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
                             unfocusedBorderColor = Color.LightGray,
-                        )
+                        ),
+                        singleLine = true
                     )
                 }
             }
@@ -157,7 +182,8 @@ fun RegisterView(navController: NavController?) {
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
                             unfocusedBorderColor = Color.LightGray,
-                        )
+                        ),
+                        singleLine = true
                     )
                 }
             }
@@ -178,7 +204,8 @@ fun RegisterView(navController: NavController?) {
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
                             unfocusedBorderColor = Color.LightGray,
-                        )
+                        ),
+                        singleLine = true
                     )
                 }
             }
@@ -192,7 +219,7 @@ fun RegisterView(navController: NavController?) {
                         value = password,
                         onValueChange = { password = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Minimal 6 karakter", fontSize = 13.sp) },
+                        placeholder = { Text("Min. 8 karakter, huruf besar, kecil, angka", fontSize = 12.sp) },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -206,7 +233,8 @@ fun RegisterView(navController: NavController?) {
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
                             unfocusedBorderColor = Color.LightGray,
-                        )
+                        ),
+                        singleLine = true
                     )
                 }
             }
@@ -223,7 +251,7 @@ fun RegisterView(navController: NavController?) {
                         placeholder = { Text("Ulangi kata sandi", fontSize = 13.sp) },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingIcon = {
-                             IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                                 val imageVector = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                                 Icon(imageVector = imageVector, contentDescription = "Toggle password visibility")
                             }
@@ -234,7 +262,8 @@ fun RegisterView(navController: NavController?) {
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
                             unfocusedBorderColor = Color.LightGray,
-                        )
+                        ),
+                        singleLine = true
                     )
                 }
             }
@@ -243,9 +272,16 @@ fun RegisterView(navController: NavController?) {
             item {
                 Button(
                     onClick = {
-                        // After registration, navigate into the main app and clear auth from backstack
-                        navController?.navigate("main") {
-                            popUpTo("register") { inclusive = true }
+                        val error = validateForm()
+                        if (error != null) {
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                        } else {
+                            // TODO: Call registration API through ViewModel
+                            Toast.makeText(context, "Registrasi berhasil!", Toast.LENGTH_SHORT).show()
+                            // FIXED: Navigate to "Home" instead of "main" to match AppRouting
+                            navController?.navigate("Home") {
+                                popUpTo("register") { inclusive = true }
+                            }
                         }
                     },
                     modifier = Modifier
@@ -273,7 +309,7 @@ fun RegisterView(navController: NavController?) {
                     }
                 }
             }
-             item { Spacer(modifier = Modifier.height(30.dp)) }
+            item { Spacer(modifier = Modifier.height(30.dp)) }
         }
     }
 }

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">TodoListApp</string>
+    <string name="app_name">UnityGrid</string>
     <string name="title_activity_login">LoginActivity</string>
     <string name="title_activity_register">RegisterActivity</string>
     <string name="usernameText">Username</string>
