@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,6 +29,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+// Import your views
 import com.example.alp_visprog.views.CreateHelpRequestView
 import com.example.alp_visprog.views.ExchangeListView
 import com.example.alp_visprog.views.HomeView
@@ -37,10 +37,9 @@ import com.example.alp_visprog.views.LoadingView
 import com.example.alp_visprog.views.LoginView
 import com.example.alp_visprog.views.ProfileView
 import com.example.alp_visprog.views.RegisterView
-import kotlinx.coroutines.delay
+import com.example.alp_visprog.views.ShoppingCartView
 import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.shadow
-import com.example.alp_visprog.views.CheckoutView
 
 enum class AppView(val title: String, val icon: ImageVector? = null) {
     Home("Home", Icons.Filled.Home),
@@ -85,9 +84,9 @@ fun CustomBottomNavigationBar(
     Box(modifier = modifier.shadow(8.dp)) {
         NavigationBar(
             modifier = Modifier.navigationBarsPadding(),
-            containerColor = Color.White, // IMPROVED: White background for better contrast
+            containerColor = Color.White,
             contentColor = Color.Gray,
-            tonalElevation = 8.dp // IMPROVED: Added elevation
+            tonalElevation = 8.dp
         ) {
             val homeSelected = currentDestination?.hierarchy?.any { it.route == AppView.Home.name } == true
             NavigationBarItem(
@@ -95,14 +94,14 @@ fun CustomBottomNavigationBar(
                     Icon(
                         imageVector = Icons.Filled.Home,
                         contentDescription = "Home",
-                        tint = if (homeSelected) Color(0xFFFF6B35) else Color(0xFF999999), // IMPROVED: Better contrast colors
-                        modifier = Modifier.size(24.dp) // IMPROVED: Larger icons
+                        tint = if (homeSelected) Color(0xFFFF6B35) else Color(0xFF999999),
+                        modifier = Modifier.size(24.dp)
                     )
                 },
                 label = {
                     Text(
                         "Home",
-                        color = if (homeSelected) Color(0xFFFF6B35) else Color(0xFF666666), // IMPROVED: Darker text
+                        color = if (homeSelected) Color(0xFFFF6B35) else Color(0xFF666666),
                         style = MaterialTheme.typography.labelMedium
                     )
                 },
@@ -117,7 +116,7 @@ fun CustomBottomNavigationBar(
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = Color(0xFFFF6B35),
                     selectedTextColor = Color(0xFFFF6B35),
-                    indicatorColor = Color(0xFFFFE5DB), // IMPROVED: Light orange indicator
+                    indicatorColor = Color(0xFFFFE5DB),
                     unselectedIconColor = Color(0xFF999999),
                     unselectedTextColor = Color(0xFF666666)
                 )
@@ -167,15 +166,15 @@ fun CustomBottomNavigationBar(
             )
         }
 
-        // IMPROVED: Enhanced FAB with better shadow and colors
+        // FAB
         FloatingActionButton(
             onClick = onFabClick,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 0.dp)
                 .size(64.dp)
-                .shadow(12.dp, CircleShape), // IMPROVED: Stronger shadow
-            containerColor = Color(0xFF4A5568), // Kept original dark gray
+                .shadow(12.dp, CircleShape),
+            containerColor = Color(0xFF4A5568),
             shape = CircleShape,
             elevation = FloatingActionButtonDefaults.elevation(
                 defaultElevation = 8.dp,
@@ -203,6 +202,11 @@ fun AppRouting() {
 
     val isAuthScreen = currentRoute == "register" || currentRoute == "login" || currentRoute == "loading"
 
+    // Removed "checkout" from the list of hidden bars
+    val shouldShowGlobalTopBar = !isAuthScreen &&
+            currentRoute != AppView.Home.name &&
+            currentRoute != AppView.ShoppingCart.name
+
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
@@ -211,7 +215,7 @@ fun AppRouting() {
 
     Scaffold(
         topBar = {
-            if (!isAuthScreen && currentRoute != AppView.Home.name) {
+            if (shouldShowGlobalTopBar) {
                 MyTopAppBar(
                     currentView = currentView,
                     canNavigateBack = navController.previousBackStackEntry != null,
@@ -279,24 +283,18 @@ fun AppRouting() {
                 )
             }
 
+            // UPDATED: Shopping Cart directly handles individual items
             composable(AppView.ShoppingCart.name) {
-                com.example.alp_visprog.views.ShoppingCartView(
-                    onBackClick = { navController.navigateUp() }
-                )
-            }
-
-            // ADD THIS NEW COMPOSABLE BLOCK
-            composable("checkout") {
-                CheckoutView(
+                ShoppingCartView(
                     onBackClick = { navController.navigateUp() },
-                    onNavigateHome = {
-                        // Clear backstack and go home
-                        navController.navigate(AppView.Home.name) {
-                            popUpTo(AppView.Home.name) { inclusive = true }
-                        }
+                    onItemClick = { helpRequestId ->
+                        // Navigate to the manual offer creation page for this specific item
+                        navController.navigate("create_exchange/$helpRequestId")
                     }
                 )
             }
+
+            // REMOVED: composable("checkout") ...
 
             composable("loading") {
                 LoadingView(

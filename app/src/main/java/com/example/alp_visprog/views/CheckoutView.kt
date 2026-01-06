@@ -1,7 +1,6 @@
 package com.example.alp_visprog.views
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,11 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -38,7 +33,7 @@ fun CheckoutView(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // Handle Success/Error States
+    // Observe State for Navigation/Toasts
     LaunchedEffect(uiState) {
         when (uiState) {
             is CheckoutUIState.Success -> {
@@ -58,7 +53,7 @@ fun CheckoutView(
                 title = { Text("Checkout Information", fontWeight = FontWeight.Bold, color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandOrange)
@@ -66,85 +61,69 @@ fun CheckoutView(
         },
         containerColor = Color(0xFFFFFBF7)
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("Contact Details", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Your offer will be sent to the owners of these items. Please provide your contact info so they can reach you.",
+                fontSize = 14.sp, color = Color.Gray
+            )
+
+            // Form Fields
+            OutlinedTextField(
+                value = viewModel.name,
+                onValueChange = { viewModel.name = it },
+                label = { Text("Your Name") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = viewModel.phone,
+                onValueChange = { viewModel.phone = it },
+                label = { Text("WhatsApp Number") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = viewModel.email,
+                onValueChange = { viewModel.email = it },
+                label = { Text("Email (Optional)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = viewModel.message,
+                onValueChange = { viewModel.message = it },
+                label = { Text("Offer Message / Description") },
+                placeholder = { Text("e.g. I have a math textbook to trade...") },
+                modifier = Modifier.fillMaxWidth().height(120.dp),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { viewModel.submitCheckout() },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = BrandOrange),
+                enabled = uiState !is CheckoutUIState.Loading
             ) {
-                Text(
-                    text = "Contact Details",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-
-                Text(
-                    text = "This information will be sent to the owners of the items in your cart as an exchange offer.",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-
-                // Name Input
-                OutlinedTextField(
-                    value = viewModel.name,
-                    onValueChange = { viewModel.name = it },
-                    label = { Text("Your Name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
-
-                // Phone Input
-                OutlinedTextField(
-                    value = viewModel.phone,
-                    onValueChange = { viewModel.phone = it },
-                    label = { Text("WhatsApp Number") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true
-                )
-
-                // Email Input
-                OutlinedTextField(
-                    value = viewModel.email,
-                    onValueChange = { viewModel.email = it },
-                    label = { Text("Email (Optional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    singleLine = true
-                )
-
-                // Message Input
-                OutlinedTextField(
-                    value = viewModel.message,
-                    onValueChange = { viewModel.message = it },
-                    label = { Text("Offer Message / Description") },
-                    placeholder = { Text("e.g. I want to trade these for my old textbooks...") },
-                    modifier = Modifier.fillMaxWidth().height(120.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Submit Button
-                Button(
-                    onClick = { viewModel.submitCheckout() },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandOrange),
-                    enabled = uiState !is CheckoutUIState.Loading
-                ) {
-                    if (uiState is CheckoutUIState.Loading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                    } else {
-                        Text("Confirm Checkout", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
+                if (uiState is CheckoutUIState.Loading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Confirm Checkout", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
