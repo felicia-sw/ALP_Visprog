@@ -27,8 +27,6 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import kotlin.jvm.java
-import kotlin.text.isBlank
 
 class ProfileViewModel(
     private val profileRepository: ProfileRepositoryInterface,
@@ -36,7 +34,6 @@ class ProfileViewModel(
     private val helpRequestRepository: HelpRequestRepository
 ) : ViewModel() {
 
-    // ✅ HARUS mutableStateOf supaya Compose bisa recompose (biar tidak stuck di Loading)
     var profileStatus: ProfileStatusUIState by mutableStateOf(ProfileStatusUIState.Start)
         private set
 
@@ -49,7 +46,6 @@ class ProfileViewModel(
     var isLoadingHelpRequests by mutableStateOf(false)
         private set
 
-    // Statistics
     var totalTawaran by mutableStateOf(0)
         private set
 
@@ -75,7 +71,6 @@ class ProfileViewModel(
                 override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {
                     if (res.isSuccessful && res.body() != null) {
                         profileStatus = ProfileStatusUIState.Success(res.body()!!.data)
-                        // Fetch help requests after profile is loaded
                         fetchUserHelpRequests()
                     } else {
                         val msg = try {
@@ -104,7 +99,6 @@ class ProfileViewModel(
             if (token == "Unknown" || token.isBlank()) {
                 isLoadingHelpRequests = false
                 Log.d("ProfileViewModel", "❌ No token available")
-                // Initialize to zero if no token
                 totalTawaran = 0
                 totalBertukar = 0
                 totalProses = 0
@@ -135,7 +129,6 @@ class ProfileViewModel(
                         } catch (e: Exception) {
                             Log.d("ProfileViewModel", "Could not read error body")
                         }
-                        // API call failed, set to zero
                         userHelpRequests = emptyList()
                         totalTawaran = 0
                         totalBertukar = 0
@@ -147,7 +140,6 @@ class ProfileViewModel(
                     isLoadingHelpRequests = false
                     Log.d("ProfileViewModel", "💥 Network error: ${t.message}")
                     Log.e("ProfileViewModel", "Error details", t)
-                    // Network error, set to zero
                     userHelpRequests = emptyList()
                     totalTawaran = 0
                     totalBertukar = 0
@@ -158,13 +150,8 @@ class ProfileViewModel(
     }
 
     private fun calculateStatistics() {
-        // Total Tawaran: All help requests created by user
         totalTawaran = userHelpRequests.size
-
-        // Total Bertukar: Help requests that are checked out (completed exchanges)
         totalBertukar = userHelpRequests.count { it.isCheckout }
-
-        // Total Proses: Help requests that are not yet checked out (in progress)
         totalProses = userHelpRequests.count { !it.isCheckout }
     }
 
@@ -186,7 +173,7 @@ class ProfileViewModel(
                     if (res.isSuccessful && res.body() != null) {
                         val profile = res.body()!!.data
                         updateStatus = UpdateProfileStatusUIState.Success(profile)
-                        profileStatus = ProfileStatusUIState.Success(profile) // refresh UI
+                        profileStatus = ProfileStatusUIState.Success(profile)
                     } else {
                         val msg = try {
                             val err = Gson().fromJson(res.errorBody()!!.charStream(), ErrorModel::class.java)

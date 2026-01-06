@@ -216,7 +216,7 @@ class AuthenticationViewModel(
                             authenticationStatus = AuthenticationStatusUIState.Success(res.body()!!.data)
 
                             resetViewModel()
-                            navController.navigate("home") {
+                            navController.navigate("Home") {
                                 popUpTo("login") { inclusive = true }
                             }
                         } else {

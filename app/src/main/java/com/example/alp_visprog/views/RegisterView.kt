@@ -23,11 +23,12 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+// FIXED: Import NavHostController
+import androidx.navigation.NavHostController
 
-
+// FIXED: Changed parameter type to NavHostController
 @Composable
-fun RegisterView(navController: NavController?) {
+fun RegisterView(navController: NavHostController?) {
     val context = LocalContext.current
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
@@ -277,7 +278,8 @@ fun RegisterView(navController: NavController?) {
                         } else {
                             // TODO: Call registration API through ViewModel
                             Toast.makeText(context, "Registrasi berhasil!", Toast.LENGTH_SHORT).show()
-                            navController?.navigate("main") {
+                            // FIXED: Navigate to "Home" instead of "main" to match AppRouting
+                            navController?.navigate("Home") {
                                 popUpTo("register") { inclusive = true }
                             }
                         }
