@@ -72,12 +72,17 @@ fun RegisterView(
             }
             is AuthenticationStatusUIState.Success -> {
                 showError = false
-                // Show toast
                 Toast.makeText(
                     context,
                     "Registrasi berhasil! Silakan login.",
                     Toast.LENGTH_LONG
                 ).show()
+
+                // REMOVE GlobalScope.launch. Use the current coroutine scope directly:
+                delay(500) // This suspends the coroutine safely
+                navController?.navigate("login") {
+                    popUpTo("register") { inclusive = true }
+                }
 
                 // Wait a bit for toast to be visible, then navigate
                 kotlinx.coroutines.GlobalScope.launch {
