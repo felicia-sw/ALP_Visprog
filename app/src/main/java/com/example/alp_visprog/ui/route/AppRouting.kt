@@ -39,6 +39,7 @@ import com.example.alp_visprog.views.ProfileView
 import com.example.alp_visprog.views.RegisterView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.draw.shadow
 
 enum class AppView(val title: String, val icon: ImageVector? = null) {
     Home("Home", Icons.Filled.Home),
@@ -80,11 +81,12 @@ fun CustomBottomNavigationBar(
     onFabClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier) {
+    Box(modifier = modifier.shadow(8.dp)) {
         NavigationBar(
             modifier = Modifier.navigationBarsPadding(),
-            containerColor = Color.White,
-            contentColor = Color.Gray
+            containerColor = Color.White, // IMPROVED: White background for better contrast
+            contentColor = Color.Gray,
+            tonalElevation = 8.dp // IMPROVED: Added elevation
         ) {
             val homeSelected = currentDestination?.hierarchy?.any { it.route == AppView.Home.name } == true
             NavigationBarItem(
@@ -92,13 +94,15 @@ fun CustomBottomNavigationBar(
                     Icon(
                         imageVector = Icons.Filled.Home,
                         contentDescription = "Home",
-                        tint = if (homeSelected) Color(0xFFFF6B35) else Color.Gray
+                        tint = if (homeSelected) Color(0xFFFF6B35) else Color(0xFF999999), // IMPROVED: Better contrast colors
+                        modifier = Modifier.size(24.dp) // IMPROVED: Larger icons
                     )
                 },
                 label = {
                     Text(
                         "Home",
-                        color = if (homeSelected) Color(0xFFFF6B35) else Color.Gray
+                        color = if (homeSelected) Color(0xFFFF6B35) else Color(0xFF666666), // IMPROVED: Darker text
+                        style = MaterialTheme.typography.labelMedium
                     )
                 },
                 selected = homeSelected,
@@ -108,9 +112,17 @@ fun CustomBottomNavigationBar(
                         launchSingleTop = true
                         restoreState = true
                     }
-                }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color(0xFFFF6B35),
+                    selectedTextColor = Color(0xFFFF6B35),
+                    indicatorColor = Color(0xFFFFE5DB), // IMPROVED: Light orange indicator
+                    unselectedIconColor = Color(0xFF999999),
+                    unselectedTextColor = Color(0xFF666666)
+                )
             )
 
+            // Spacer for FAB
             NavigationBarItem(
                 icon = { },
                 label = { Text("") },
@@ -125,13 +137,15 @@ fun CustomBottomNavigationBar(
                     Icon(
                         imageVector = Icons.Filled.Person,
                         contentDescription = "Profil",
-                        tint = if (profileSelected) Color(0xFFFF6B35) else Color.Gray
+                        tint = if (profileSelected) Color(0xFFFF6B35) else Color(0xFF999999),
+                        modifier = Modifier.size(24.dp)
                     )
                 },
                 label = {
                     Text(
                         "Profil",
-                        color = if (profileSelected) Color(0xFFFF6B35) else Color.Gray
+                        color = if (profileSelected) Color(0xFFFF6B35) else Color(0xFF666666),
+                        style = MaterialTheme.typography.labelMedium
                     )
                 },
                 selected = profileSelected,
@@ -141,18 +155,31 @@ fun CustomBottomNavigationBar(
                         launchSingleTop = true
                         restoreState = true
                     }
-                }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color(0xFFFF6B35),
+                    selectedTextColor = Color(0xFFFF6B35),
+                    indicatorColor = Color(0xFFFFE5DB),
+                    unselectedIconColor = Color(0xFF999999),
+                    unselectedTextColor = Color(0xFF666666)
+                )
             )
         }
 
+        // IMPROVED: Enhanced FAB with better shadow and colors
         FloatingActionButton(
             onClick = onFabClick,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 0.dp)
-                .size(64.dp),
-            containerColor = Color(0xFF4A5568),
-            shape = CircleShape
+                .size(64.dp)
+                .shadow(12.dp, CircleShape), // IMPROVED: Stronger shadow
+            containerColor = Color(0xFF4A5568), // Kept original dark gray
+            shape = CircleShape,
+            elevation = FloatingActionButtonDefaults.elevation(
+                defaultElevation = 8.dp,
+                pressedElevation = 12.dp
+            )
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,
@@ -261,9 +288,8 @@ fun AppRouting() {
                 LoadingView(
                     onTimeout = {
                         navController.navigate("login") {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
                             launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 )
