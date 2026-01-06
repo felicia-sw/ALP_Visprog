@@ -62,6 +62,7 @@ fun HomeContent(
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("Semua") }
     var showFilters by remember { mutableStateOf(true) }
+    var isCompactView by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier.fillMaxSize()
@@ -145,6 +146,24 @@ fun HomeContent(
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = Color(0xFF333333)
+                                )
+                            }
+                        }
+
+                        Surface(
+                            modifier = Modifier.size(40.dp),
+                            color = if (isCompactView) Color.White else Color.White.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(8.dp),
+                            onClick = { isCompactView = !isCompactView }
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (isCompactView) Icons.Default.ViewAgenda else Icons.Default.ViewStream,
+                                    contentDescription = if (isCompactView) "Large View" else "Compact View",
+                                    tint = if (isCompactView) BrandOrange else Color.Gray,
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                         }
@@ -312,19 +331,32 @@ fun HomeContent(
                     } else {
                         LazyColumn(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(if (isCompactView) 8.dp else 12.dp)
                         ) {
                             items(state.data) { helpRequest ->
-                                HelpRequestCard(
-                                    request = helpRequest,
-                                    onAddToCart = {},
-                                    onContactSeller = {
-                                        navController.navigate("create_exchange/${helpRequest.id}")
-                                    },
-                                    onProfileClick = { userId ->
-                                        navController.navigate("Profile")
-                                    }
-                                )
+                                if (isCompactView) {
+                                    HelpRequestCompactCard(
+                                        request = helpRequest,
+                                        onAddToCart = {},
+                                        onContactSeller = {
+                                            navController.navigate("create_exchange/${helpRequest.id}")
+                                        },
+                                        onProfileClick = { userId ->
+                                            navController.navigate("Profile")
+                                        }
+                                    )
+                                } else {
+                                    HelpRequestCard(
+                                        request = helpRequest,
+                                        onAddToCart = {},
+                                        onContactSeller = {
+                                            navController.navigate("create_exchange/${helpRequest.id}")
+                                        },
+                                        onProfileClick = { userId ->
+                                            navController.navigate("Profile")
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

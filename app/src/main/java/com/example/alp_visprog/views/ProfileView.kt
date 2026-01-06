@@ -27,7 +27,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -705,40 +704,6 @@ fun HelpRequestItemCard(helpRequest: HelpRequestModel, modifier: Modifier = Modi
                     fontSize = 12.sp,
                     color = if (helpRequest.isCheckout) BrandTeal else BrandOrange
                 )
-            }
-        }
-    }
-}
-
-/* ===============================
-   PREVIEW DUMMY (UI ONLY)
-   =============================== */
-
-@Preview(showBackground = true)
-@Composable
-fun ProfileViewDummyPreview() {
-    MaterialTheme {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                text = "John Doe",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Text(
-                text = "@johndoe",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text("Surabaya, Indonesia")
-            Text("Suka barter barang koleksi & elektronik.")
-
-            Spacer(Modifier.height(16.dp))
-
-            Button(onClick = {}) {
-                Text("Edit Profil")
             }
         }
     }

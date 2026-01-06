@@ -18,7 +18,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -26,7 +25,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.alp_visprog.uiStates.AuthenticationStatusUIState
 import com.example.alp_visprog.viewModel.AuthenticationViewModel
-
 
 @Composable
 fun LoginView(navController: NavHostController?) {
@@ -290,11 +288,4 @@ fun LoginView(navController: NavHostController?) {
              item { Spacer(modifier = Modifier.height(30.dp)) }
         }
     }
-}
-
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun LoginViewPreview() {
-    LoginView(navController = rememberNavController())
 }
