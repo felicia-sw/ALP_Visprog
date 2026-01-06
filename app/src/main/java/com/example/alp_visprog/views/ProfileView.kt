@@ -21,8 +21,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,7 +33,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.alp_visprog.models.HelpRequestModel
-import com.example.alp_visprog.models.ProfileModel
 import com.example.alp_visprog.ui.theme.BrandOrange
 import com.example.alp_visprog.ui.theme.BrandTeal
 import com.example.alp_visprog.uiStates.ProfileStatusUIState
@@ -48,6 +45,8 @@ fun ProfileView(navController: NavController? = null) {
     var showSettings by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(0) }
 
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+
     // Fetch profile when view loads
     LaunchedEffect(Unit) {
         Log.d("ProfileView", "🚀 ProfileView launched, fetching profile...")
@@ -55,6 +54,21 @@ fun ProfileView(navController: NavController? = null) {
             vm.fetchProfile()
         } catch (e: Exception) {
             Log.e("ProfileView", "❌ Error in LaunchedEffect", e)
+        }
+    }
+
+    // Refresh data when ProfileView becomes visible (resumed)
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                Log.d("ProfileView", "🔄 ProfileView resumed - refreshing user data...")
+                vm.refreshUserData()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
@@ -153,7 +167,6 @@ fun ProfileView(navController: NavController? = null) {
             }
 
             is ProfileStatusUIState.Success -> {
-                // FIXED: Add null safety check here
                 val profile = state.profile
                 if (profile == null) {
                     Log.e("ProfileView", "❌ Profile data is null in Success state!")
@@ -216,7 +229,7 @@ fun ProfileView(navController: NavController? = null) {
 
 @Composable
 private fun ProfileContent(
-    profile: ProfileModel,
+    profile: com.example.alp_visprog.models.ProfileModel,
     vm: ProfileViewModel,
     selectedTab: Int,
     onTabChange: (Int) -> Unit,
@@ -510,6 +523,47 @@ private fun ProfileContent(
 }
 
 @Composable
+fun HelpRequestItemCard(
+    helpRequest: HelpRequestModel,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.height(200.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            AsyncImage(
+                model = helpRequest.imageUrl,
+                contentDescription = helpRequest.nameOfProduct,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .background(Color(0xFFE0E0E0)),
+                contentScale = ContentScale.Crop
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = helpRequest.nameOfProduct,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    maxLines = 2,
+                    color = Color(0xFF1A1A1A)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun StatItem(number: String, label: String, color: Color) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
@@ -530,7 +584,7 @@ fun StatItem(number: String, label: String, color: Color) {
 
 @Composable
 fun EditProfileDialog(
-    profile: ProfileModel,
+    profile: com.example.alp_visprog.models.ProfileModel,
     onDismiss: () -> Unit,
     onSave: (String, String, String?) -> Unit
 ) {
@@ -565,8 +619,7 @@ fun EditProfileDialog(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(20.dp)
             ) {
                 item {
                     Row(
@@ -592,6 +645,7 @@ fun EditProfileDialog(
 
                     Box(
                         modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
                             .size(100.dp)
                     ) {
                         if (!profile.photoUrl.isNullOrBlank()) {
@@ -642,79 +696,78 @@ fun EditProfileDialog(
                     Text(
                         text = "Tap untuk ganti foto",
                         fontSize = 12.sp,
-                        color = Color.Gray
+                        color = Color.Gray,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = "Nama Lengkap",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.Black
+                    Text(
+                        text = "Nama Lengkap",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = fullName,
+                        onValueChange = { fullName = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedBorderColor = BrandOrange
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = fullName,
-                            onValueChange = { fullName = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedBorderColor = Color(0xFFE0E0E0),
-                                focusedBorderColor = BrandOrange
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Lokasi",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = location,
+                        onValueChange = { location = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedBorderColor = BrandOrange
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Bio",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = bio,
+                        onValueChange = { bio = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        placeholder = {
+                            Text(
+                                text = "Ceritakan tentang diri Anda...",
+                                color = Color.Gray
                             )
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = "Lokasi",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.Black
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = location,
-                            onValueChange = { location = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedBorderColor = Color(0xFFE0E0E0),
-                                focusedBorderColor = BrandOrange
-                            )
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = "Bio",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.Black
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = bio,
-                            onValueChange = { bio = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            placeholder = {
-                                Text(
-                                    text = "Ceritakan tentang diri Anda...",
-                                    color = Color.Gray
-                                )
-                            },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedBorderColor = Color(0xFFE0E0E0),
-                                focusedBorderColor = BrandOrange
-                            ),
-                            maxLines = 5
-                        )
-                    }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedBorderColor = BrandOrange
+                        ),
+                        maxLines = 5
+                    )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -751,50 +804,7 @@ fun EditProfileDialog(
     }
 }
 
-@Composable
-fun HelpRequestItemCard(helpRequest: HelpRequestModel, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.height(200.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            AsyncImage(
-                model = helpRequest.imageUrl,
-                contentDescription = helpRequest.nameOfProduct,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .background(Color(0xFFE0E0E0)),
-                contentScale = ContentScale.Crop
-            )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp)
-            ) {
-                Text(
-                    text = helpRequest.nameOfProduct,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = Color.Black,
-                    maxLines = 1
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = if (helpRequest.isCheckout) "Selesai" else "Tersedia",
-                    fontSize = 12.sp,
-                    color = if (helpRequest.isCheckout) BrandTeal else BrandOrange
-                )
-            }
-        }
-    }
-}
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsModal(
     onDismiss: () -> Unit,
@@ -816,7 +826,7 @@ fun SettingsModal(
                 .fillMaxWidth(0.85f)
                 .wrapContentHeight()
                 .clickable(
-                    onClick = { }, // Prevent clicks from passing through
+                    onClick = { },
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ),
@@ -828,7 +838,6 @@ fun SettingsModal(
                     .fillMaxWidth()
                     .padding(24.dp)
             ) {
-                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -850,18 +859,17 @@ fun SettingsModal(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Logout Button
                 Button(
                     onClick = onLogout,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFBE9E7)), // Light red background
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFBE9E7)),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Logout,
                         contentDescription = "Logout",
                         tint = Color.Red,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Keluar", fontSize = 16.sp, color = Color.Red, fontWeight = FontWeight.Medium)
@@ -869,7 +877,6 @@ fun SettingsModal(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Cancel Button
                 OutlinedButton(
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth(),

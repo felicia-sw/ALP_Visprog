@@ -17,11 +17,15 @@ import com.example.alp_visprog.uiStates.CreateExchangeUIState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import android.util.Patterns
+import android.util.Base64
+import android.util.Log
+import org.json.JSONObject
 
 class CreateHelpRequestViewModel(
     private val helpRequestRepository: HelpRequestRepository,
@@ -48,9 +52,13 @@ class CreateHelpRequestViewModel(
     private val _dataStatus = MutableStateFlow<CreateExchangeUIState>(CreateExchangeUIState.Idle)
     val dataStatus: StateFlow<CreateExchangeUIState> = _dataStatus.asStateFlow()
 
+    // Store current user ID
+    private var currentUserId: Int = -1
+
     // Load profile data on init
     init {
         loadProfileData()
+        loadCurrentUserId()
     }
 
     fun loadProfileData() {
@@ -62,6 +70,59 @@ class CreateHelpRequestViewModel(
         viewModelScope.launch {
             userRepository.currentUserEmail.collect { email ->
                 if (email.isNotEmpty() && contactEmail.isEmpty()) contactEmail = email
+            }
+        }
+    }
+
+    private fun loadCurrentUserId() {
+        viewModelScope.launch {
+            try {
+                val token = userRepository.currentUserToken.first()
+                Log.d("CreateHelpRequest", "🔑 Token: ${if (token == "Unknown") "Unknown" else token.take(30)}...")
+
+                if (token != "Unknown" && token.isNotBlank()) {
+                    // Decode JWT token to get user ID
+                    val parts = token.split(".")
+                    Log.d("CreateHelpRequest", "📦 Token parts: ${parts.size}")
+
+                    if (parts.size == 3) {
+                        try {
+                            val payload = String(Base64.decode(parts[1], Base64.URL_SAFE))
+                            Log.d("CreateHelpRequest", "📄 Payload: $payload")
+
+                            val json = JSONObject(payload)
+                            currentUserId = json.getInt("userId")
+                            Log.d("CreateHelpRequest", "✅ Current user ID: $currentUserId")
+                        } catch (e: Exception) {
+                            Log.e("CreateHelpRequest", "❌ Error decoding payload", e)
+                            // Try alternative key names
+                            try {
+                                val payload = String(Base64.decode(parts[1], Base64.URL_SAFE))
+                                val json = JSONObject(payload)
+                                // Try different possible keys
+                                currentUserId = when {
+                                    json.has("userId") -> json.getInt("userId")
+                                    json.has("id") -> json.getInt("id")
+                                    json.has("sub") -> json.getString("sub").toIntOrNull() ?: -1
+                                    else -> -1
+                                }
+                                Log.d("CreateHelpRequest", "✅ User ID from alternative key: $currentUserId")
+                            } catch (e2: Exception) {
+                                Log.e("CreateHelpRequest", "❌ Failed with alternative keys", e2)
+                                currentUserId = -1
+                            }
+                        }
+                    } else {
+                        Log.e("CreateHelpRequest", "❌ Invalid token format - expected 3 parts, got ${parts.size}")
+                        currentUserId = -1
+                    }
+                } else {
+                    Log.e("CreateHelpRequest", "❌ Token is Unknown or blank")
+                    currentUserId = -1
+                }
+            } catch (e: Exception) {
+                Log.e("CreateHelpRequest", "❌ Error getting user ID", e)
+                currentUserId = -1
             }
         }
     }
@@ -90,9 +151,7 @@ class CreateHelpRequestViewModel(
             return
         }
 
-        // 2. Check Email Validity (The Fix)
-        // We only check if it is NOT empty. If it's empty, we allow it (optional).
-        // If it has text, it MUST match the email pattern.
+        // 2. Check Email Validity
         if (contactEmail.isNotEmpty() && !Patterns.EMAIL_ADDRESS.matcher(contactEmail).matches()) {
             _dataStatus.value = CreateExchangeUIState.Error("Invalid email")
             return
@@ -100,33 +159,56 @@ class CreateHelpRequestViewModel(
 
         _dataStatus.value = CreateExchangeUIState.Loading
 
-        val finalImageUrl = selectedImageUri?.toString() ?: ""
+        // Get token and create request
+        viewModelScope.launch {
+            try {
+                val token = userRepository.currentUserToken.first()
 
-        val requestCall = helpRequestRepository.createHelpRequest(
-            nameOfProduct = nameOfProduct,
-            description = description,
-            exchangeProductName = exchangeProductName,
-            location = location,
-            imageUrl = finalImageUrl,
-            categoryId = categoryIdInput.toIntOrNull() ?: 1,
-            userId = 1,
-            contactPhone = contactPhone,
-            contactEmail = contactEmail
-        )
-
-        requestCall.enqueue(object : Callback<CreateHelpRequestResponse> {
-            override fun onResponse(call: Call<CreateHelpRequestResponse>, response: Response<CreateHelpRequestResponse>) {
-                if (response.isSuccessful) {
-                    _dataStatus.value = CreateExchangeUIState.Success
-                } else {
-                    // Fallback: If backend sends a specific error, show it
-                    _dataStatus.value = CreateExchangeUIState.Error("Failed: ${response.message()}")
+                if (token == "Unknown" || token.isBlank()) {
+                    _dataStatus.value = CreateExchangeUIState.Error("User session not found. Please login again.")
+                    return@launch
                 }
+
+                val bearerToken = "Bearer $token"
+                val finalImageUrl = selectedImageUri?.toString() ?: ""
+
+                Log.d("CreateHelpRequest", "🚀 Creating help request with token")
+
+                val requestCall = helpRequestRepository.createHelpRequest(
+                    bearerToken = bearerToken,
+                    nameOfProduct = nameOfProduct,
+                    description = description,
+                    exchangeProductName = exchangeProductName,
+                    location = location,
+                    imageUrl = finalImageUrl,
+                    categoryId = categoryIdInput.toIntOrNull() ?: 1,
+                    userId = if (currentUserId != -1) currentUserId else 1, // Fallback to 1 if not decoded
+                    contactPhone = contactPhone,
+                    contactEmail = contactEmail
+                )
+
+                requestCall.enqueue(object : Callback<CreateHelpRequestResponse> {
+                    override fun onResponse(call: Call<CreateHelpRequestResponse>, response: Response<CreateHelpRequestResponse>) {
+                        if (response.isSuccessful) {
+                            Log.d("CreateHelpRequest", "✅ Help request created successfully!")
+                            _dataStatus.value = CreateExchangeUIState.Success
+                        } else {
+                            val errorBody = response.errorBody()?.string()
+                            Log.e("CreateHelpRequest", "❌ Failed: ${response.code()} - $errorBody")
+                            _dataStatus.value = CreateExchangeUIState.Error("Failed: ${response.message()}")
+                        }
+                    }
+
+                    override fun onFailure(call: Call<CreateHelpRequestResponse>, t: Throwable) {
+                        Log.e("CreateHelpRequest", "❌ Network error: ${t.message}")
+                        _dataStatus.value = CreateExchangeUIState.Error("Error: ${t.localizedMessage}")
+                    }
+                })
+            } catch (e: Exception) {
+                Log.e("CreateHelpRequest", "❌ Exception in submit", e)
+                _dataStatus.value = CreateExchangeUIState.Error("Error: ${e.message}")
             }
-            override fun onFailure(call: Call<CreateHelpRequestResponse>, t: Throwable) {
-                _dataStatus.value = CreateExchangeUIState.Error("Error: ${t.localizedMessage}")
-            }
-        })
+        }
     }
 
     companion object {

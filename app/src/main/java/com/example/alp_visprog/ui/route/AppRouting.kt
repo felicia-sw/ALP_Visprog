@@ -48,7 +48,6 @@ enum class AppView(val title: String, val icon: ImageVector? = null) {
     Profile(title = "Profil", Icons.Filled.Person),
     ShoppingCart(title = "Keranjang", Icons.Filled.ShoppingCart)
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyTopAppBar(
@@ -74,6 +73,7 @@ fun MyTopAppBar(
         }
     )
 }
+
 
 @Composable
 fun CustomBottomNavigationBar(

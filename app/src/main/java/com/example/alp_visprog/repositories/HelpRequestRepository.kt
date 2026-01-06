@@ -20,6 +20,7 @@ class HelpRequestRepository(
     }
 
     fun createHelpRequest(
+        bearerToken: String,
         nameOfProduct: String,
         description: String,
         exchangeProductName: String,
@@ -27,7 +28,6 @@ class HelpRequestRepository(
         imageUrl: String,
         categoryId: Int,
         userId: Int,
-        // --- NEW PARAMETERS ---
         contactPhone: String,
         contactEmail: String
     ): Call<CreateHelpRequestResponse> {
@@ -40,11 +40,10 @@ class HelpRequestRepository(
             imageUrl = imageUrl,
             categoryId = categoryId,
             userId = userId,
-            // --- PASS THEM HERE ---
             contactPhone = contactPhone,
             contactEmail = contactEmail
         )
 
-        return helpRequestAPIService.createHelpRequest(request)
+        return helpRequestAPIService.createHelpRequest(bearerToken, request)
     }
 }

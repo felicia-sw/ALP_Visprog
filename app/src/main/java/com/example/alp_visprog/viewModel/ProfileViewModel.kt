@@ -147,10 +147,38 @@ class ProfileViewModel(
                     return@launch
                 }
 
-                val bearer = "Bearer $token"
-                Log.d(TAG, "🔑 Token: ${token.take(20)}...")
+                // Decode token to get current user ID
+                var currentUserId = -1
+                try {
+                    val parts = token.split(".")
+                    if (parts.size == 3) {
+                        val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE))
+                        val json = org.json.JSONObject(payload)
+                        currentUserId = when {
+                            json.has("userId") -> json.getInt("userId")
+                            json.has("id") -> json.getInt("id")
+                            json.has("sub") -> json.getString("sub").toIntOrNull() ?: -1
+                            else -> -1
+                        }
+                        Log.d(TAG, "✅ Decoded user ID from token: $currentUserId")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Error decoding token for user ID", e)
+                }
 
-                helpRequestRepository.getUserHelpRequests(bearer).enqueue(object : Callback<GetAllHelpRequestsResponse> {
+                if (currentUserId == -1) {
+                    Log.e(TAG, "❌ Could not determine user ID from token")
+                    isLoadingHelpRequests = false
+                    totalTawaran = 0
+                    totalBertukar = 0
+                    totalProses = 0
+                    return@launch
+                }
+
+                // Get all help requests and filter by current user ID
+                Log.d(TAG, "🔍 Fetching all help requests and filtering for userId=$currentUserId")
+
+                helpRequestRepository.getAllHelpRequests().enqueue(object : Callback<GetAllHelpRequestsResponse> {
                     override fun onResponse(
                         call: Call<GetAllHelpRequestsResponse>,
                         res: Response<GetAllHelpRequestsResponse>
@@ -162,8 +190,11 @@ class ProfileViewModel(
                             if (res.isSuccessful) {
                                 val responseBody = res.body()
                                 if (responseBody != null && responseBody.data != null) {
-                                    userHelpRequests = responseBody.data
-                                    Log.d(TAG, "✅ Success! Found ${userHelpRequests.size} help requests")
+                                    // Filter help requests by current user ID
+                                    val allRequests = responseBody.data
+                                    userHelpRequests = allRequests.filter { it.userId == currentUserId }
+
+                                    Log.d(TAG, "✅ Success! Total requests: ${allRequests.size}, User's requests: ${userHelpRequests.size}")
                                     calculateStatistics()
                                     Log.d(TAG, "📊 Stats - Tawaran: $totalTawaran, Bertukar: $totalBertukar, Proses: $totalProses")
                                 } else {
@@ -222,6 +253,13 @@ class ProfileViewModel(
         totalTawaran = 0
         totalBertukar = 0
         totalProses = 0
+    }
+
+    // Add method to refresh only help requests (for quick updates)
+    fun refreshUserData() {
+        Log.d(TAG, "🔄 refreshUserData() called")
+        Log.d(TAG, "📊 Current stats before refresh - Tawaran: $totalTawaran, Bertukar: $totalBertukar, Proses: $totalProses")
+        fetchUserHelpRequests()
     }
 
     fun updateProfile(fullName: String, location: String, bio: String?) {

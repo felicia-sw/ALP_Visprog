@@ -15,6 +15,7 @@ interface HelpRequestAPIService {
 
     @POST("api/help-requests")
     fun createHelpRequest(
+        @Header("Authorization") bearerToken: String,
         @Body request: CreateHelpRequest
     ): Call<CreateHelpRequestResponse>
 
