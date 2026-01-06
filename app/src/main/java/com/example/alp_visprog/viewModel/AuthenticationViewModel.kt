@@ -207,17 +207,34 @@ class AuthenticationViewModel(
 
                 call.enqueue(object : Callback<UserResponse> {
                     override fun onResponse(call: Call<UserResponse>, res: Response<UserResponse>) {
-                        if (res.isSuccessful) {
-                            val token = res.body()!!.data.token
-                            val jwt = JWT(token!!)
-                            val username = jwt.getClaim("username").asString()
+                        if (res.isSuccessful && res.body() != null) {
+                            // 1. Get token safely
+                            val responseData = res.body()?.data
+                            val token = responseData?.token
 
-                            savedUsernameToken(token, username!!, emailInput)
-                            authenticationStatus = AuthenticationStatusUIState.Success(res.body()!!.data)
+                            if (token != null) {
+                                try {
+                                    // 2. Decode JWT safely
+                                    val jwt = JWT(token)
+                                    val username = jwt.getClaim("username").asString()
 
-                            resetViewModel()
-                            navController.navigate("Home") {
-                                popUpTo("login") { inclusive = true }
+                                    if (username != null) {
+                                        // 3. Save only if we have all data
+                                        savedUsernameToken(token, username, emailInput)
+                                        authenticationStatus = AuthenticationStatusUIState.Success(responseData)
+
+                                        resetViewModel()
+                                        navController.navigate("Home") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    } else {
+                                        authenticationStatus = AuthenticationStatusUIState.Failed("Token error: Username missing")
+                                    }
+                                } catch (e: Exception) {
+                                    authenticationStatus = AuthenticationStatusUIState.Failed("Token invalid")
+                                }
+                            } else {
+                                authenticationStatus = AuthenticationStatusUIState.Failed("Login berhasil tetapi token kosong")
                             }
                         } else {
                             val errorMessage = try {
@@ -260,19 +277,33 @@ class AuthenticationViewModel(
                     override fun onResponse(call: Call<UserResponse>, res: Response<UserResponse>) {
                         viewModelScope.launch {
                             if (res.isSuccessful && res.body() != null) {
-                                val token = res.body()!!.data.token
-                                val jwt = JWT(token!!)
-                                val username = jwt.getClaim("username").asString()
+                                // 1. Get token safely
+                                val responseData = res.body()?.data
+                                val token = responseData?.token
 
-                                savedUsernameToken(token, username!!, emailInput)
+                                if (token != null) {
+                                    try {
+                                        // 2. Decode JWT safely
+                                        val jwt = JWT(token)
+                                        val username = jwt.getClaim("username").asString()
 
-                                authenticationStatus = AuthenticationStatusUIState.Success(res.body()!!.data)
+                                        if (username != null) {
+                                            // 3. Save only if we have all data
+                                            savedUsernameToken(token, username, emailInput)
+                                            authenticationStatus = AuthenticationStatusUIState.Success(responseData)
 
-                                resetViewModel()
-                                navController.navigate("Home") {
-                                    popUpTo("login") {
-                                        inclusive = true
+                                            resetViewModel()
+                                            navController.navigate("Home") {
+                                                popUpTo("login") { inclusive = true }
+                                            }
+                                        } else {
+                                            authenticationStatus = AuthenticationStatusUIState.Failed("Token error: Username missing")
+                                        }
+                                    } catch (e: Exception) {
+                                        authenticationStatus = AuthenticationStatusUIState.Failed("Token invalid")
                                     }
+                                } else {
+                                    authenticationStatus = AuthenticationStatusUIState.Failed("Login berhasil tetapi token kosong")
                                 }
                             } else {
                                 val errorMessage = try {

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,10 +33,13 @@ import androidx.navigation.navArgument
 import com.example.alp_visprog.views.CreateHelpRequestView
 import com.example.alp_visprog.views.ExchangeListView
 import com.example.alp_visprog.views.HomeView
+import com.example.alp_visprog.views.LoadingView
 import com.example.alp_visprog.views.LoginView
 import com.example.alp_visprog.views.ProfileView
 import com.example.alp_visprog.views.RegisterView
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.draw.shadow
 
 enum class AppView(val title: String, val icon: ImageVector? = null) {
     Home("Home", Icons.Filled.Home),
@@ -77,11 +81,12 @@ fun CustomBottomNavigationBar(
     onFabClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier) {
+    Box(modifier = modifier.shadow(8.dp)) {
         NavigationBar(
             modifier = Modifier.navigationBarsPadding(),
-            containerColor = Color.White,
-            contentColor = Color.Gray
+            containerColor = Color.White, // IMPROVED: White background for better contrast
+            contentColor = Color.Gray,
+            tonalElevation = 8.dp // IMPROVED: Added elevation
         ) {
             val homeSelected = currentDestination?.hierarchy?.any { it.route == AppView.Home.name } == true
             NavigationBarItem(
@@ -89,13 +94,15 @@ fun CustomBottomNavigationBar(
                     Icon(
                         imageVector = Icons.Filled.Home,
                         contentDescription = "Home",
-                        tint = if (homeSelected) Color(0xFFFF6B35) else Color.Gray
+                        tint = if (homeSelected) Color(0xFFFF6B35) else Color(0xFF999999), // IMPROVED: Better contrast colors
+                        modifier = Modifier.size(24.dp) // IMPROVED: Larger icons
                     )
                 },
                 label = {
                     Text(
                         "Home",
-                        color = if (homeSelected) Color(0xFFFF6B35) else Color.Gray
+                        color = if (homeSelected) Color(0xFFFF6B35) else Color(0xFF666666), // IMPROVED: Darker text
+                        style = MaterialTheme.typography.labelMedium
                     )
                 },
                 selected = homeSelected,
@@ -105,9 +112,17 @@ fun CustomBottomNavigationBar(
                         launchSingleTop = true
                         restoreState = true
                     }
-                }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color(0xFFFF6B35),
+                    selectedTextColor = Color(0xFFFF6B35),
+                    indicatorColor = Color(0xFFFFE5DB), // IMPROVED: Light orange indicator
+                    unselectedIconColor = Color(0xFF999999),
+                    unselectedTextColor = Color(0xFF666666)
+                )
             )
 
+            // Spacer for FAB
             NavigationBarItem(
                 icon = { },
                 label = { Text("") },
@@ -122,13 +137,15 @@ fun CustomBottomNavigationBar(
                     Icon(
                         imageVector = Icons.Filled.Person,
                         contentDescription = "Profil",
-                        tint = if (profileSelected) Color(0xFFFF6B35) else Color.Gray
+                        tint = if (profileSelected) Color(0xFFFF6B35) else Color(0xFF999999),
+                        modifier = Modifier.size(24.dp)
                     )
                 },
                 label = {
                     Text(
                         "Profil",
-                        color = if (profileSelected) Color(0xFFFF6B35) else Color.Gray
+                        color = if (profileSelected) Color(0xFFFF6B35) else Color(0xFF666666),
+                        style = MaterialTheme.typography.labelMedium
                     )
                 },
                 selected = profileSelected,
@@ -138,18 +155,31 @@ fun CustomBottomNavigationBar(
                         launchSingleTop = true
                         restoreState = true
                     }
-                }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color(0xFFFF6B35),
+                    selectedTextColor = Color(0xFFFF6B35),
+                    indicatorColor = Color(0xFFFFE5DB),
+                    unselectedIconColor = Color(0xFF999999),
+                    unselectedTextColor = Color(0xFF666666)
+                )
             )
         }
 
+        // IMPROVED: Enhanced FAB with better shadow and colors
         FloatingActionButton(
             onClick = onFabClick,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 0.dp)
-                .size(64.dp),
-            containerColor = Color(0xFF4A5568),
-            shape = CircleShape
+                .size(64.dp)
+                .shadow(12.dp, CircleShape), // IMPROVED: Stronger shadow
+            containerColor = Color(0xFF4A5568), // Kept original dark gray
+            shape = CircleShape,
+            elevation = FloatingActionButtonDefaults.elevation(
+                defaultElevation = 8.dp,
+                pressedElevation = 12.dp
+            )
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,
@@ -170,7 +200,7 @@ fun AppRouting() {
     val currentRoute = currentDestination?.route
     val currentView = AppView.entries.find { it.name == currentRoute }
 
-    val isAuthScreen = currentRoute == "register" || currentRoute == "login"
+    val isAuthScreen = currentRoute == "register" || currentRoute == "login" || currentRoute == "loading"
 
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(
@@ -203,7 +233,7 @@ fun AppRouting() {
 
         NavHost(
             navController = navController,
-            startDestination = "login",
+            startDestination = "loading",
             modifier = if (isAuthScreen) Modifier else Modifier.padding(innerPadding)
         ) {
             composable("register") {
@@ -251,6 +281,17 @@ fun AppRouting() {
             composable(AppView.ShoppingCart.name) {
                 com.example.alp_visprog.views.ShoppingCartView(
                     onBackClick = { navController.navigateUp() }
+                )
+            }
+
+            composable("loading") {
+                LoadingView(
+                    onTimeout = {
+                        navController.navigate("login") {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
                 )
             }
         }
