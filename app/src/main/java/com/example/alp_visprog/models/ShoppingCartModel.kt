@@ -69,6 +69,12 @@ data class CartItem(
     val imageUrl: String
 )
 
+/**
+ * CartItemResponse - Alias for CartItem used in UI layer
+ * This is for compatibility with existing ShoppingCartView
+ */
+typealias CartItemResponse = CartItem
+
 // ========== REQUEST MODELS ==========
 
 /**
