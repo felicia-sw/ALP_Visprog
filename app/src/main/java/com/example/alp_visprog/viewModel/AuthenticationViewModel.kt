@@ -238,15 +238,17 @@ class AuthenticationViewModel(
                             }
                         } else {
                             val errorMessage = try {
-                                Gson().fromJson(res.errorBody()!!.charStream(), ErrorModel::class.java).errors
-                            } catch (e: Exception) {
-                                when (res.code()) {
-                                    400 -> "Data tidak valid"
-                                    409 -> "Email atau username sudah terdaftar"
-                                    422 -> "Password tidak memenuhi syarat"
-                                    else -> "Registrasi gagal (${res.code()})"
+                                val errorBody = res.errorBody()
+                                if (errorBody != null) {
+                                    val errorModel = Gson().fromJson(errorBody.charStream(), ErrorModel::class.java)
+                                    errorModel.errors
+                                } else {
+                                    "Terjadi kesalahan (${res.code()})"
                                 }
+                            } catch (e: Exception) {
+                                "Gagal memproses error: ${res.code()}"
                             }
+
                             authenticationStatus = AuthenticationStatusUIState.Failed(errorMessage)
                         }
                     }
