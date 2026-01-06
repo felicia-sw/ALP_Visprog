@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -28,157 +28,65 @@ import coil.compose.AsyncImage
 import com.example.alp_visprog.models.CartItem
 import com.example.alp_visprog.uiStates.ShoppingCartUIState
 import com.example.alp_visprog.viewModel.ShoppingCartViewModel
-
-// Import colors from theme instead of declaring them here
 import com.example.alp_visprog.ui.theme.BrandOrange
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShoppingCartView(
     viewModel: ShoppingCartViewModel = viewModel(factory = ShoppingCartViewModel.Factory),
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onItemClick: (Int) -> Unit // UPDATED: Navigates to individual offer page
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "Keranjang Saya",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-                },
+                title = { Text("Keranjang Saya", fontWeight = FontWeight.Bold, color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.refreshCart() }) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Refresh",
-                            tint = Color.White
-                        )
+                        Icon(Icons.Default.Refresh, "Refresh", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BrandOrange,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandOrange)
             )
         },
         containerColor = Color(0xFFFFFBF7)
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-        ) {
+        Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
             when (uiState) {
                 is ShoppingCartUIState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                color = BrandOrange,
-                                strokeWidth = 4.dp,
-                                modifier = Modifier.size(48.dp)
-                            )
-                            Text(
-                                "Memuat keranjang...",
-                                color = Color.Gray,
-                                fontSize = 15.sp
-                            )
-                        }
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = BrandOrange)
                     }
                 }
-
                 is ShoppingCartUIState.Error -> {
-                    Box(
+                    Column(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.padding(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ShoppingCart,
-                                contentDescription = "Error",
-                                tint = Color.Gray,
-                                modifier = Modifier.size(64.dp)
-                            )
-                            Text(
-                                text = "Gagal Memuat Keranjang",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1A1A1A)
-                            )
-                            Text(
-                                text = (uiState as ShoppingCartUIState.Error).errorMessage,
-                                color = Color.Red,
-                                fontSize = 14.sp,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(
-                                onClick = { viewModel.refreshCart() },
-                                colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)
-                            ) {
-                                Icon(Icons.Default.Refresh, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Coba Lagi")
-                            }
+                        Icon(Icons.Default.ShoppingCart, null, tint = Color.LightGray, modifier = Modifier.size(64.dp))
+                        Text(
+                            text = (uiState as ShoppingCartUIState.Error).errorMessage,
+                            color = Color.Red,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                        Button(onClick = { viewModel.refreshCart() }, colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)) {
+                            Text("Coba Lagi")
                         }
                     }
                 }
-
                 is ShoppingCartUIState.Success -> {
                     val items = (uiState as ShoppingCartUIState.Success).items
 
                     if (items.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ShoppingCart,
-                                    contentDescription = "Empty Cart",
-                                    tint = Color.Gray,
-                                    modifier = Modifier.size(64.dp)
-                                )
-                                Text(
-                                    "Keranjang Kosong",
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Gray
-                                )
-                                Text(
-                                    "Tambahkan item dari halaman utama",
-                                    fontSize = 14.sp,
-                                    color = Color.Gray
-                                )
-                            }
-                        }
+                        EmptyCartState()
                     } else {
                         LazyColumn(
                             contentPadding = PaddingValues(16.dp),
@@ -186,23 +94,18 @@ fun ShoppingCartView(
                         ) {
                             item {
                                 Text(
-                                    text = "${items.size} item dalam keranjang",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF1A1A1A),
+                                    "${items.size} item dalam keranjang",
+                                    fontSize = 14.sp,
+                                    color = Color.Gray,
                                     modifier = Modifier.padding(bottom = 8.dp)
                                 )
                             }
-
                             items(items) { item ->
                                 CartItemCard(
                                     item = item,
-                                    onDelete = { viewModel.removeFromCart(item.helpRequestId) }
+                                    onDelete = { viewModel.removeFromCart(item.helpRequestId) },
+                                    onAction = { onItemClick(item.helpRequestId) }
                                 )
-                            }
-
-                            item {
-                                Spacer(modifier = Modifier.height(80.dp))
                             }
                         }
                     }
@@ -213,96 +116,60 @@ fun ShoppingCartView(
 }
 
 @Composable
-fun CartItemCard(item: CartItem, onDelete: () -> Unit) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFCF8F3)),
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+fun EmptyCartState() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Product Image
-            AsyncImage(
-                model = item.imageUrl,
-                contentDescription = item.productName,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.LightGray)
-            )
-
-            // Product Info
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                // Product Name
-                Text(
-                    text = item.productName,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color(0xFF1A1A1A),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                // Exchange Info
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = "Tukar dgn:",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = item.price,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFFF6B4A)
-                    )
-                }
-
-                // Description
-                Text(
-                    text = item.description,
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                // Added Date
-                Text(
-                    text = "Ditambahkan: ${item.addedAt.take(10)}",
-                    fontSize = 11.sp,
-                    color = Color.Gray.copy(alpha = 0.7f)
-                )
-            }
-
-            // Delete Button
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Remove",
-                    tint = Color.Red,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
+        Icon(Icons.Default.ShoppingCart, null, tint = Color.LightGray, modifier = Modifier.size(80.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Keranjang Kosong", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Gray)
     }
 }
 
 @Composable
-fun Padding(padding: Modifier, child: @Composable () -> Unit) {
-    Box(modifier = padding) { child() }
+fun CartItemCard(item: CartItem, onDelete: () -> Unit, onAction: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            AsyncImage(
+                model = item.imageUrl, contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(80.dp).clip(RoundedCornerShape(8.dp)).background(Color.LightGray)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(item.productName, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("Tukar dgn: ${item.price}", color = BrandOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // NEW: Action Button Row
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Trade Button
+                    Button(
+                        onClick = onAction,
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandOrange),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        modifier = Modifier.height(32.dp)
+                    ) {
+                        Text("Ajukan", fontSize = 12.sp)
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    // Delete Button
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Delete, "Delete", tint = Color.Red, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+        }
+    }
 }
