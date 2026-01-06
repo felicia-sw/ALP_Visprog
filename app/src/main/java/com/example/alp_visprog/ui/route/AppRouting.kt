@@ -1,6 +1,10 @@
 package com.example.alp_visprog.ui.route
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -13,6 +17,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,27 +25,27 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
-// Import your views
 import com.example.alp_visprog.views.CreateHelpRequestView
 import com.example.alp_visprog.views.ExchangeListView
 import com.example.alp_visprog.views.HomeView
-import com.example.alp_visprog.views.LoadingView
 import com.example.alp_visprog.views.LoginView
 import com.example.alp_visprog.views.ProfileView
 import com.example.alp_visprog.views.RegisterView
 import com.example.alp_visprog.views.ShoppingCartView
 import com.example.alp_visprog.views.SplashView
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import androidx.compose.ui.draw.shadow
 
 enum class AppView(val title: String, val icon: ImageVector? = null) {
     Home("Home", Icons.Filled.Home),
@@ -48,6 +53,7 @@ enum class AppView(val title: String, val icon: ImageVector? = null) {
     Profile(title = "Profil", Icons.Filled.Person),
     ShoppingCart(title = "Keranjang", Icons.Filled.ShoppingCart)
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyTopAppBar(
@@ -73,7 +79,6 @@ fun MyTopAppBar(
         }
     )
 }
-
 
 @Composable
 fun CustomBottomNavigationBar(
@@ -202,9 +207,8 @@ fun AppRouting() {
     val currentView = AppView.entries.find { it.name == currentRoute }
 
     // Check if current screen is auth screen or splash
-    val isAuthScreen = currentRoute == "register" || currentRoute == "login" || currentRoute == "loading" || currentRoute == "splash"
+    val isAuthScreen = currentRoute == "register" || currentRoute == "login" || currentRoute == "splash" || currentRoute == "auth_check"
 
-    // Removed "checkout" from the list of hidden bars
     val shouldShowGlobalTopBar = !isAuthScreen &&
             currentRoute != AppView.Home.name &&
             currentRoute != AppView.ShoppingCart.name
@@ -240,15 +244,31 @@ fun AppRouting() {
 
         NavHost(
             navController = navController,
-            startDestination = "splash", // Changed from "loading" to "splash"
+            startDestination = "splash",
             modifier = if (isAuthScreen) Modifier else Modifier.padding(innerPadding)
         ) {
-            // Splash Screen - New entry point
+            // Splash Screen - Entry point
             composable("splash") {
                 SplashView(
                     onSplashComplete = {
-                        navController.navigate("loading") {
+                        navController.navigate("auth_check") {
                             popUpTo("splash") { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            // Auth Check Screen - Determines if user is logged in (shows loading indicator)
+            composable("auth_check") {
+                AuthCheckScreen(
+                    onAuthenticated = {
+                        navController.navigate(AppView.Home.name) {
+                            popUpTo("auth_check") { inclusive = true }
+                        }
+                    },
+                    onNotAuthenticated = {
+                        navController.navigate("login") {
+                            popUpTo("auth_check") { inclusive = true }
                         }
                     }
                 )
@@ -296,26 +316,11 @@ fun AppRouting() {
                 )
             }
 
-            // UPDATED: Shopping Cart directly handles individual items
             composable(AppView.ShoppingCart.name) {
                 ShoppingCartView(
                     onBackClick = { navController.navigateUp() },
                     onItemClick = { helpRequestId ->
-                        // Navigate to the manual offer creation page for this specific item
                         navController.navigate("create_exchange/$helpRequestId")
-                    }
-                )
-            }
-
-            // REMOVED: composable("checkout") ...
-
-            composable("loading") {
-                LoadingView(
-                    onTimeout = {
-                        navController.navigate("login") {
-                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                            launchSingleTop = true
-                        }
                     }
                 )
             }
@@ -336,6 +341,56 @@ fun AppRouting() {
                     }
                 )
             }
+        }
+    }
+}
+
+/**
+ * AuthCheckScreen - Checks authentication status and shows loading indicator
+ * This is where the "loading page" properly appears - only when checking auth state
+ */
+@Composable
+fun AuthCheckScreen(
+    onAuthenticated: () -> Unit,
+    onNotAuthenticated: () -> Unit
+) {
+    val app = androidx.compose.ui.platform.LocalContext.current.applicationContext as com.example.alp_visprog.App
+    val userRepository = app.container.userRepository
+
+    LaunchedEffect(Unit) {
+        // Check authentication status
+        val token = userRepository.currentUserToken.first()
+
+        if (token != "Unknown" && token.isNotBlank()) {
+            // User is authenticated
+            onAuthenticated()
+        } else {
+            // User needs to login
+            onNotAuthenticated()
+        }
+    }
+
+    // Show loading indicator while checking
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFFFF6E3)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            CircularProgressIndicator(
+                color = Color(0xFFF9794D),
+                strokeWidth = 4.dp,
+                modifier = Modifier.size(48.dp)
+            )
+            Text(
+                "Memeriksa status login...",
+                color = Color.Gray,
+                fontSize = 15.sp
+            )
         }
     }
 }
