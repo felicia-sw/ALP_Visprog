@@ -1,5 +1,6 @@
 package com.example.alp_visprog.repositories
 
+import com.example.alp_visprog.models.CheckoutRequest
 import com.example.alp_visprog.models.CreateExchangeRequest
 import com.example.alp_visprog.models.GeneralResponse
 import com.example.alp_visprog.models.GetAllExchangesResponse
@@ -50,4 +51,10 @@ fun createExchange(
 
     return exchangeAPIService.createExchange(request)
 }
+    // In ExchangeRepository.kt
+
+    // Add this function:
+    fun checkout(request: CheckoutRequest): Call<GeneralResponse> {
+        return exchangeAPIService.checkout(request)
+    }
 }

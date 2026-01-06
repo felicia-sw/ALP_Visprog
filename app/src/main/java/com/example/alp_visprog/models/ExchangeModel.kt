@@ -1,5 +1,7 @@
 package com.example.alp_visprog.models
 
+import com.google.gson.annotations.SerializedName
+
 // Represents a single offer from a neighbor
 data class ExchangeModel(
     val id: Int,
@@ -10,7 +12,7 @@ data class ExchangeModel(
     val helpRequestId: Int
 )
 
-// 2. The request model (what you send to create one) <-- need to add additional because you dont need id to create one
+// The request model for a single exchange
 data class CreateExchangeRequest(
     val name: String,
     val phone: String,
@@ -19,12 +21,18 @@ data class CreateExchangeRequest(
     val helpRequestId: Int
 )
 
-// Represents the response from GET /api/exchanges
+// NEW: The request model for the Batch Checkout
+data class CheckoutRequest(
+    @SerializedName("name") val name: String,
+    @SerializedName("phone") val phone: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("description") val description: String
+)
+
 data class GetAllExchangesResponse(
     val data: List<ExchangeModel>
 )
 
-// Represents the response from DELETE (and other simple actions)
 data class GeneralResponse(
     val message: String
 )
