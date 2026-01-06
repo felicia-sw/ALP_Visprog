@@ -253,7 +253,7 @@ fun AppRouting() {
             }
 
             composable(AppView.Profile.name) {
-                ProfileView()
+                ProfileView(navController = navController)
             }
 
             composable(
