@@ -103,12 +103,11 @@ fun RegisterView(
     val orangeColor = Color(0xFFF9794D)
     val backgroundColor = Color(0xFFFFF6E3)
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = backgroundColor
-    ) {
-        // Location Picker Dialog (instead of full screen overlay)
-        if (showLocationPicker) {
+    // Location Picker Dialog - Moved OUTSIDE Surface so it renders on top
+    if (showLocationPicker) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showLocationPicker = false }
+        ) {
             LocationPickerView(
                 onLocationSelected = { name, lat, lon ->
                     authenticationViewModel.locationNameInput = name
@@ -119,7 +118,12 @@ fun RegisterView(
                 onClose = { showLocationPicker = false }
             )
         }
+    }
 
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = backgroundColor
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
