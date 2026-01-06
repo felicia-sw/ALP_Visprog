@@ -3,7 +3,6 @@ package com.example.alp_visprog.views
 import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -26,6 +25,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.alp_visprog.uiStates.AuthenticationStatusUIState
 import com.example.alp_visprog.viewModel.AuthenticationViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterView(
@@ -45,12 +46,24 @@ fun RegisterView(
     var errorMessage by remember { mutableStateOf("") }
 
     // Update ViewModel inputs
-    LaunchedEffect(username) { authenticationViewModel.changeUsernameInput(username) }
-    LaunchedEffect(email) { authenticationViewModel.changeEmailInput(email) }
-    LaunchedEffect(password) { authenticationViewModel.changePasswordInput(password) }
-    LaunchedEffect(confirmPassword) { authenticationViewModel.changeConfirmPasswordInput(confirmPassword) }
+    LaunchedEffect(username) {
+        authenticationViewModel.changeUsernameInput(username)
+        authenticationViewModel.checkRegisterForm()
+    }
+    LaunchedEffect(email) {
+        authenticationViewModel.changeEmailInput(email)
+        authenticationViewModel.checkRegisterForm()
+    }
+    LaunchedEffect(password) {
+        authenticationViewModel.changePasswordInput(password)
+        authenticationViewModel.checkRegisterForm()
+    }
+    LaunchedEffect(confirmPassword) {
+        authenticationViewModel.changeConfirmPasswordInput(confirmPassword)
+        authenticationViewModel.checkRegisterForm()
+    }
 
-    // Handle auth status changes
+    // Handle auth status changes - FIXED
     LaunchedEffect(authStatus) {
         when (authStatus) {
             is AuthenticationStatusUIState.Failed -> {
@@ -59,10 +72,19 @@ fun RegisterView(
             }
             is AuthenticationStatusUIState.Success -> {
                 showError = false
-                Toast.makeText(context, "Registrasi berhasil! Silakan login.", Toast.LENGTH_SHORT).show()
-                // FIXED: Navigate to login after successful registration
-                navController?.navigate("login") {
-                    popUpTo("register") { inclusive = true }
+                // Show toast
+                Toast.makeText(
+                    context,
+                    "Registrasi berhasil! Silakan login.",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                // Wait a bit for toast to be visible, then navigate
+                kotlinx.coroutines.GlobalScope.launch {
+                    delay(500)
+                    navController?.navigate("login") {
+                        popUpTo("register") { inclusive = true }
+                    }
                 }
             }
             else -> {
@@ -78,23 +100,27 @@ fun RegisterView(
         modifier = Modifier.fillMaxSize(),
         color = backgroundColor
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item {
-                // Header
+            // Header Section
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(orangeColor)
+                    .padding(vertical = 40.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(orangeColor)
-                        .padding(bottom = 30.dp, top = 20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(100.dp)
                             .clip(CircleShape)
                             .background(Color.White),
                         contentAlignment = Alignment.Center
@@ -102,239 +128,374 @@ fun RegisterView(
                         Icon(
                             imageVector = Icons.Filled.Handshake,
                             contentDescription = "Tuker.In Logo",
-                            modifier = Modifier.size(50.dp),
+                            modifier = Modifier.size(60.dp),
                             tint = orangeColor
                         )
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "Tuker.In",
-                        fontSize = 30.sp,
+                        fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
-                    Spacer(modifier = Modifier.height(5.dp))
                     Text(
                         text = "Platform Barter Komunitas",
-                        fontSize = 15.sp,
-                        color = Color.White
+                        fontSize = 16.sp,
+                        color = Color.White.copy(alpha = 0.9f)
                     )
                 }
             }
 
-            item {
-                // Login/Register Toggle
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Tab Selector
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                            .clickable { navController?.navigate("login") },
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.Transparent
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Text(
+                                "Masuk",
+                                color = Color.Gray,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = orangeColor
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Text(
+                                "Daftar",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Error Message
+            if (showError) {
                 Card(
                     modifier = Modifier
-                        .padding(top = 20.dp, start = 30.dp, end = 30.dp)
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Button(
-                            onClick = { navController?.navigate("login") },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        ) {
-                            Text("Masuk", color = Color.Black, fontSize = 15.sp)
-                        }
-                        Button(
-                            onClick = { /* Already on Register */ },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(topEnd = 10.dp, bottomEnd = 10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = orangeColor)
-                        ) {
-                            Text("Daftar", color = Color.White, fontSize = 15.sp)
-                        }
-                    }
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(30.dp)) }
-
-            if (showError) {
-                item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 30.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
-                        shape = RoundedCornerShape(10.dp)
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(15.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = "Error",
-                                tint = Color.Red,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(text = errorMessage, color = Color.Red, fontSize = 13.sp)
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = "Error",
+                            tint = Color(0xFFD32F2F),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = errorMessage,
+                            color = Color(0xFFD32F2F),
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp
+                        )
                     }
                 }
-                item { Spacer(modifier = Modifier.height(15.dp)) }
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Username Field
-            item {
-                Column(modifier = Modifier.padding(horizontal = 30.dp)) {
-                    Text("Username", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(10.dp))
+            // Form Section
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                // Username Field
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Username",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = Color(0xFF333333)
+                    )
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Pilih username Anda", fontSize = 13.sp) },
-                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-                        shape = RoundedCornerShape(10.dp),
+                        placeholder = {
+                            Text(
+                                "Pilih username unik",
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                tint = orangeColor
+                            )
+                        },
+                        shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
-                            unfocusedBorderColor = Color.LightGray,
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            disabledContainerColor = Color(0xFFF5F5F5)
                         ),
                         enabled = authStatus !is AuthenticationStatusUIState.Loading,
                         singleLine = true
                     )
                 }
-            }
-            item { Spacer(modifier = Modifier.height(15.dp)) }
 
-            // Email Field
-            item {
-                Column(modifier = Modifier.padding(horizontal = 30.dp)) {
-                    Text("Email", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(10.dp))
+                // Email Field
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Email",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = Color(0xFF333333)
+                    )
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("nama@email.com", fontSize = 13.sp) },
-                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                        placeholder = {
+                            Text(
+                                "nama@email.com",
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Email,
+                                contentDescription = null,
+                                tint = orangeColor
+                            )
+                        },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
-                            unfocusedBorderColor = Color.LightGray,
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            disabledContainerColor = Color(0xFFF5F5F5)
                         ),
                         enabled = authStatus !is AuthenticationStatusUIState.Loading,
                         singleLine = true
                     )
                 }
-            }
-            item { Spacer(modifier = Modifier.height(15.dp)) }
 
-            // Password Field
-            item {
-                Column(modifier = Modifier.padding(horizontal = 30.dp)) {
-                    Text("Kata Sandi", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(10.dp))
+                // Password Field
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Kata Sandi",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = Color(0xFF333333)
+                    )
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Min. 8 karakter", fontSize = 13.sp) },
-                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                        placeholder = {
+                            Text(
+                                "Minimal 8 karakter",
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = orangeColor
+                            )
+                        },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                val imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                                Icon(imageVector = imageVector, contentDescription = "Toggle password visibility")
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                    contentDescription = "Toggle password visibility",
+                                    tint = Color.Gray
+                                )
                             }
                         },
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
-                            unfocusedBorderColor = Color.LightGray,
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            disabledContainerColor = Color(0xFFF5F5F5)
                         ),
                         enabled = authStatus !is AuthenticationStatusUIState.Loading,
                         singleLine = true
                     )
                 }
-            }
-            item { Spacer(modifier = Modifier.height(15.dp)) }
 
-            // Confirm Password Field
-            item {
-                Column(modifier = Modifier.padding(horizontal = 30.dp)) {
-                    Text("Konfirmasi Kata Sandi", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(10.dp))
+                // Confirm Password Field
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Konfirmasi Kata Sandi",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = Color(0xFF333333)
+                    )
                     OutlinedTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Ulangi kata sandi", fontSize = 13.sp) },
-                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                        placeholder = {
+                            Text(
+                                "Ketik ulang kata sandi",
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = orangeColor
+                            )
+                        },
                         trailingIcon = {
                             IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                                val imageVector = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                                Icon(imageVector = imageVector, contentDescription = "Toggle password visibility")
+                                Icon(
+                                    imageVector = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                    contentDescription = "Toggle password visibility",
+                                    tint = Color.Gray
+                                )
                             }
                         },
                         visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = orangeColor,
-                            unfocusedBorderColor = Color.LightGray,
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            disabledContainerColor = Color(0xFFF5F5F5)
                         ),
                         enabled = authStatus !is AuthenticationStatusUIState.Loading,
-                        singleLine = true
+                        singleLine = true,
+                        isError = confirmPassword.isNotEmpty() && password != confirmPassword
+                    )
+                    if (confirmPassword.isNotEmpty() && password != confirmPassword) {
+                        Text(
+                            text = "Kata sandi tidak cocok",
+                            color = Color(0xFFD32F2F),
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Register Button
+            Button(
+                onClick = {
+                    navController?.let { authenticationViewModel.register(it) }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = orangeColor,
+                    disabledContainerColor = Color(0xFFE0E0E0)
+                ),
+                enabled = username.isNotEmpty() &&
+                        email.isNotEmpty() &&
+                        password.isNotEmpty() &&
+                        confirmPassword.isNotEmpty() &&
+                        password == confirmPassword &&
+                        authStatus !is AuthenticationStatusUIState.Loading
+            ) {
+                if (authStatus is AuthenticationStatusUIState.Loading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 3.dp
+                    )
+                } else {
+                    Text(
+                        "Daftar Akun",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
-            item { Spacer(modifier = Modifier.height(30.dp)) }
 
-            // Register Button
-            item {
-                Button(
-                    onClick = {
-                        navController?.let { authenticationViewModel.register(it) }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 30.dp)
-                        .height(50.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = orangeColor),
-                    enabled = username.isNotEmpty() &&
-                            email.isNotEmpty() &&
-                            password.isNotEmpty() &&
-                            confirmPassword.isNotEmpty() &&
-                            authStatus !is AuthenticationStatusUIState.Loading
-                ) {
-                    if (authStatus is AuthenticationStatusUIState.Loading) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    } else {
-                        Text("Daftar Akun", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    }
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Login Prompt
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Sudah punya akun?",
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+                TextButton(onClick = { navController?.navigate("login") }) {
+                    Text(
+                        "Masuk",
+                        color = orangeColor,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(20.dp)) }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Sudah punya akun?", color = Color.Gray, fontSize = 13.sp)
-                    TextButton(onClick = { navController?.navigate("login") }) {
-                        Text("Masuk", color = orangeColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-            item { Spacer(modifier = Modifier.height(30.dp)) }
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
