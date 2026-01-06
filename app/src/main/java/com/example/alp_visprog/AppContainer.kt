@@ -14,7 +14,7 @@ import com.example.alp_visprog.repositories.UserRepositoryInterface
 import com.example.alp_visprog.services.AuthenticationAPIService
 import com.example.alp_visprog.services.ExchangeAPIService
 import com.example.alp_visprog.services.HelpRequestAPIService
-import com.example.alp_visprog.services.ShoppingCartAPIService
+import com.example.alp_visprog.services.ShoppingCartService
 import com.example.alp_visprog.services.ProfileAPIService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
