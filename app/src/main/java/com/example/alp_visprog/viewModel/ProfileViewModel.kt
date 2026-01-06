@@ -196,6 +196,14 @@ class ProfileViewModel(
         updateStatus = UpdateProfileStatusUIState.Start
     }
 
+    fun logout() {
+        viewModelScope.launch {
+            userRepository.saveUserToken("")
+            userRepository.saveUsername("")
+            userRepository.saveUserEmail("")
+        }
+    }
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

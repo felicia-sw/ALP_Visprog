@@ -93,14 +93,14 @@ fun LoginView(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Handshake,
-                            contentDescription = "UnityGrid Logo",
+                            contentDescription = "Tuker.in Logo",
                             modifier = Modifier.size(50.dp),
                             tint = orangeColor
                         )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "UnityGrid",
+                        text = "Tuker.in",
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
