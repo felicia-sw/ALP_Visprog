@@ -9,11 +9,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.auth0.android.jwt.JWT
 import com.example.alp_visprog.App
 import com.example.alp_visprog.models.GetAllHelpRequestsResponse as AllHelpResp
 import com.example.alp_visprog.models.ProfileResponse
+import com.example.alp_visprog.models.ShoppingCartResponse
 import com.example.alp_visprog.repositories.HelpRequestRepository
 import com.example.alp_visprog.repositories.ProfileRepositoryInterface
+import com.example.alp_visprog.repositories.ShoppingCartRepository
 import com.example.alp_visprog.repositories.UserRepositoryInterface
 import com.example.alp_visprog.uiStates.HomeUIState
 import kotlinx.coroutines.delay
@@ -29,7 +32,8 @@ import retrofit2.Response
 class HomeViewModel(
     private val helpRequestRepository: HelpRequestRepository,
     private val profileRepository: ProfileRepositoryInterface,
-    private val userRepository: UserRepositoryInterface
+    private val userRepository: UserRepositoryInterface,
+    private val shoppingCartRepository: ShoppingCartRepository
 ) : ViewModel() {
 
     companion object {
@@ -42,7 +46,8 @@ class HomeViewModel(
                 HomeViewModel(
                     helpRequestRepository = application.container.helpRequestRepository,
                     profileRepository = application.container.profileRepository,
-                    userRepository = application.container.userRepository
+                    userRepository = application.container.userRepository,
+                    shoppingCartRepository = application.container.shoppingCartRepository
                 )
             }
         }
@@ -54,42 +59,167 @@ class HomeViewModel(
     var userLocation by mutableStateOf("Loading...")
         private set
 
+    // NEW: Cart status message for user feedback
+    private val _cartStatusMessage = MutableStateFlow<String?>(null)
+    val cartStatusMessage: StateFlow<String?> = _cartStatusMessage.asStateFlow()
+
     private var isRequestInProgress = false
+    private var currentUserId: Int = -1
 
     init {
         fetchUserLocation()
+        fetchUserId()
+    }
+
+    // NEW: Fetch current user ID from token
+    private fun fetchUserId() {
+        viewModelScope.launch {
+            try {
+                val token = userRepository.currentUserToken.first()
+                if (token != "Unknown" && token.isNotBlank()) {
+                    val jwt = JWT(token)
+                    // Backend JWT payload uses 'id', not 'userId'
+                    val userId = jwt.getClaim("id").asInt()
+                    if (userId != null) {
+                        currentUserId = userId
+                        Log.d(TAG, "✅ Current user ID: $currentUserId")
+                    } else {
+                        Log.e(TAG, "❌ User ID claim is null in JWT")
+                    }
+                } else {
+                    Log.d(TAG, "❌ No valid token available")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Error fetching user ID: ${e.message}", e)
+            }
+        }
     }
 
     private fun fetchUserLocation() {
         viewModelScope.launch {
-            val token = userRepository.currentUserToken.first()
-            if (token == "Unknown" || token.isBlank()) {
-                userLocation = "Unknown"
-                return@launch
-            }
-
-            val bearer = "Bearer $token"
-            profileRepository.viewProfile(bearer).enqueue(object : Callback<ProfileResponse> {
-                override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {
-                    // OLD CODE (CRASH PRONE):
-                    // userLocation = res.body()!!.data.location
-                    // NEW FIX:
-                    val responseBody = res.body()
-                    if (res.isSuccessful && responseBody != null) {
-                        // Safely get location, default to "Unknown" if null
-                        userLocation = responseBody.data?.location ?: "Unknown"
-                        Log.d(TAG, "✅ User location fetched: $userLocation")
-                    } else {
-                        userLocation = "Unknown"
-                        Log.d(TAG, "❌ Failed to fetch user location")
-                    }
-                }
-
-                override fun onFailure(call: Call<ProfileResponse>, t: Throwable) {
+            try {
+                val token = userRepository.currentUserToken.first()
+                if (token == "Unknown" || token.isBlank()) {
                     userLocation = "Unknown"
-                    Log.d(TAG, "💥 Error fetching user location: ${t.message}")
+                    Log.d(TAG, "❌ No token available for location fetch")
+                    return@launch
                 }
-            })
+
+                val bearer = "Bearer $token"
+                profileRepository.viewProfile(bearer).enqueue(object : Callback<ProfileResponse> {
+                    override fun onResponse(call: Call<ProfileResponse>, res: Response<ProfileResponse>) {
+                        try {
+                            val responseBody = res.body()
+                            if (res.isSuccessful && responseBody != null && responseBody.data != null) {
+                                userLocation = responseBody.data.location ?: "Unknown"
+                                Log.d(TAG, "✅ User location fetched: $userLocation")
+                            } else {
+                                userLocation = "Unknown"
+                                Log.d(TAG, "❌ Failed to fetch user location - Response unsuccessful or null")
+                            }
+                        } catch (e: Exception) {
+                            userLocation = "Unknown"
+                            Log.e(TAG, "❌ Exception while parsing location: ${e.message}", e)
+                        }
+                    }
+
+                    override fun onFailure(call: Call<ProfileResponse>, t: Throwable) {
+                        userLocation = "Unknown"
+                        Log.e(TAG, "💥 Error fetching user location: ${t.message}", t)
+                    }
+                })
+            } catch (e: Exception) {
+                userLocation = "Unknown"
+                Log.e(TAG, "💥 Exception in fetchUserLocation: ${e.message}", e)
+            }
+        }
+    }
+
+    // NEW: Add item to shopping cart
+    fun addToCart(helpRequestId: Int) {
+        if (currentUserId == -1) {
+            _cartStatusMessage.value = "Gagal menambahkan ke keranjang. Silakan login ulang."
+            Log.e(TAG, "❌ Cannot add to cart: User ID not available")
+            viewModelScope.launch {
+                delay(3000)
+                _cartStatusMessage.value = null
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "🛒 Adding helpRequestId=$helpRequestId to cart for userId=$currentUserId")
+
+                shoppingCartRepository.addToCart(currentUserId, helpRequestId).enqueue(
+                    object : Callback<ShoppingCartResponse> {
+                        override fun onResponse(
+                            call: Call<ShoppingCartResponse>,
+                            response: Response<ShoppingCartResponse>
+                        ) {
+                            if (response.isSuccessful) {
+                                _cartStatusMessage.value = "✅ Berhasil ditambahkan ke keranjang!"
+                                Log.d(TAG, "✅ Successfully added to cart")
+                            } else {
+                                // Enhanced error handling matching backend responses
+                                val errorMessage = when (response.code()) {
+                                    400 -> {
+                                        // Backend returns 400 if item already in cart
+                                        try {
+                                            val errorBody = response.errorBody()?.string()
+                                            Log.d(TAG, "Error body: $errorBody")
+                                            if (errorBody?.contains("already in your cart", ignoreCase = true) == true) {
+                                                "⚠️ Item sudah ada di keranjang"
+                                            } else {
+                                                "❌ Gagal menambahkan ke keranjang"
+                                            }
+                                        } catch (e: Exception) {
+                                            "❌ Gagal menambahkan ke keranjang"
+                                        }
+                                    }
+                                    404 -> "❌ Item tidak ditemukan"
+                                    401 -> "❌ Silakan login terlebih dahulu"
+                                    500 -> "❌ Terjadi kesalahan server"
+                                    else -> "❌ Gagal menambahkan (${response.code()})"
+                                }
+                                _cartStatusMessage.value = errorMessage
+                                Log.e(TAG, "❌ Failed to add to cart: $errorMessage")
+                            }
+
+                            // Clear message after 3 seconds
+                            viewModelScope.launch {
+                                delay(3000)
+                                _cartStatusMessage.value = null
+                            }
+                        }
+
+                        override fun onFailure(call: Call<ShoppingCartResponse>, t: Throwable) {
+                            val errorMessage = when {
+                                t.message?.contains("timeout", ignoreCase = true) == true ->
+                                    "❌ Koneksi timeout. Coba lagi."
+                                t.message?.contains("Unable to resolve host", ignoreCase = true) == true ->
+                                    "❌ Tidak dapat terhubung ke server"
+                                else -> "❌ Error: ${t.message}"
+                            }
+                            _cartStatusMessage.value = errorMessage
+                            Log.e(TAG, "💥 Error adding to cart: ${t.message}", t)
+
+                            viewModelScope.launch {
+                                delay(3000)
+                                _cartStatusMessage.value = null
+                            }
+                        }
+                    }
+                )
+            } catch (e: Exception) {
+                _cartStatusMessage.value = "❌ Terjadi kesalahan"
+                Log.e(TAG, "💥 Exception in addToCart: ${e.message}", e)
+
+                viewModelScope.launch {
+                    delay(3000)
+                    _cartStatusMessage.value = null
+                }
+            }
         }
     }
 
@@ -156,7 +286,6 @@ class HomeViewModel(
         }
     }
 
-    // FIXED: Proper filter logic mapping BARANG/JASA to categoryId
     fun filterHelpRequests(type: String? = null, status: String? = null) {
         Log.d(TAG, "filterHelpRequests: Filtering by type=$type, status=$status")
         _homeUIState.value = HomeUIState.Loading
@@ -172,13 +301,11 @@ class HomeViewModel(
                     if (response.isSuccessful) {
                         val all = response.body()?.data ?: emptyList()
 
-                        // FIXED: Map "BARANG" -> categoryId 1, "JASA" -> categoryId 2
                         val filtered = when {
                             type.isNullOrBlank() -> all
                             type == "BARANG" -> all.filter { it.categoryId == 1 }
                             type == "JASA" -> all.filter { it.categoryId == 2 }
                             else -> {
-                                // Fallback: search by name
                                 all.filter {
                                     it.nameOfProduct.contains(type, ignoreCase = true) ||
                                             it.exchangeProductName.contains(type, ignoreCase = true)
@@ -228,7 +355,6 @@ class HomeViewModel(
                     if (response.isSuccessful) {
                         val all = response.body()?.data ?: emptyList()
 
-                        // Search across multiple fields
                         val searchResults = all.filter {
                             it.nameOfProduct.contains(query, ignoreCase = true) ||
                                     it.exchangeProductName.contains(query, ignoreCase = true) ||

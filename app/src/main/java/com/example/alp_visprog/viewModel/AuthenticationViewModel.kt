@@ -21,8 +21,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-//import com.example.alp_visprog.Application
-import com.example.alp_visprog.R
 import com.example.alp_visprog.repositories.AuthenticationRepositoryInterface
 import kotlinx.coroutines.launch
 import com.example.alp_visprog.models.ErrorModel
@@ -35,15 +33,14 @@ import retrofit2.Response
 import java.io.IOException
 
 class AuthenticationViewModel(
-
     private val authenticationRepository: AuthenticationRepositoryInterface,
     private val userRepository: UserRepositoryInterface
 ) : ViewModel() {
+
     var authenticationStatus: AuthenticationStatusUIState by mutableStateOf(
         AuthenticationStatusUIState.Start
     )
         private set
-
 
     private val _authenticationUIState = MutableStateFlow(AuthenticationUIState())
 
@@ -85,14 +82,12 @@ class AuthenticationViewModel(
             if (currentState.showPassword) {
                 currentState.copy(
                     showPassword = false,
-                    passwordVisibility = PasswordVisualTransformation(),
-                    passwordVisibilityIcon = R.drawable.ic_password_visible
+                    passwordVisibility = PasswordVisualTransformation()
                 )
             } else {
                 currentState.copy(
                     showPassword = true,
-                    passwordVisibility = VisualTransformation.None,
-                    passwordVisibilityIcon = R.drawable.ic_password_invisible
+                    passwordVisibility = VisualTransformation.None
                 )
             }
         }
@@ -103,14 +98,12 @@ class AuthenticationViewModel(
             if (currentState.showConfirmPassword) {
                 currentState.copy(
                     showConfirmPassword = false,
-                    confirmPasswordVisibility = PasswordVisualTransformation(),
-                    confirmPasswordVisibilityIcon = R.drawable.ic_password_visible
+                    confirmPasswordVisibility = PasswordVisualTransformation()
                 )
             } else {
                 currentState.copy(
                     showConfirmPassword = true,
-                    confirmPasswordVisibility = VisualTransformation.None,
-                    confirmPasswordVisibilityIcon = R.drawable.ic_password_invisible
+                    confirmPasswordVisibility = VisualTransformation.None
                 )
             }
         }
@@ -152,7 +145,6 @@ class AuthenticationViewModel(
         if (isEnabled) {
             return Color.Blue
         }
-
         return Color.LightGray
     }
 
@@ -167,15 +159,12 @@ class AuthenticationViewModel(
                 showPassword = false,
                 passwordVisibility = PasswordVisualTransformation(),
                 confirmPasswordVisibility = PasswordVisualTransformation(),
-                passwordVisibilityIcon = R.drawable.ic_password_visible,
-                confirmPasswordVisibilityIcon = R.drawable.ic_password_visible,
                 buttonEnabled = false
             )
         }
     }
 
     fun register(navController: NavHostController) {
-        // Client-side validation first
         when {
             usernameInput.isBlank() -> {
                 authenticationStatus = AuthenticationStatusUIState.Failed("Username tidak boleh kosong")
@@ -208,18 +197,15 @@ class AuthenticationViewModel(
                 call.enqueue(object : Callback<UserResponse> {
                     override fun onResponse(call: Call<UserResponse>, res: Response<UserResponse>) {
                         if (res.isSuccessful && res.body() != null) {
-                            // 1. Get token safely
                             val responseData = res.body()?.data
                             val token = responseData?.token
 
                             if (token != null) {
                                 try {
-                                    // 2. Decode JWT safely
                                     val jwt = JWT(token)
                                     val username = jwt.getClaim("username").asString()
 
                                     if (username != null) {
-                                        // 3. Save only if we have all data
                                         savedUsernameToken(token, username, emailInput)
                                         authenticationStatus = AuthenticationStatusUIState.Success(responseData)
 
@@ -234,21 +220,50 @@ class AuthenticationViewModel(
                                     authenticationStatus = AuthenticationStatusUIState.Failed("Token invalid")
                                 }
                             } else {
-                                authenticationStatus = AuthenticationStatusUIState.Failed("Login berhasil tetapi token kosong")
+                                authenticationStatus = AuthenticationStatusUIState.Failed("Registrasi berhasil tetapi token kosong")
                             }
                         } else {
                             val errorMessage = try {
                                 val errorBody = res.errorBody()
                                 if (errorBody != null) {
-                                    val errorModel = Gson().fromJson(errorBody.charStream(), ErrorModel::class.java)
-                                    errorModel.errors
+                                    val errorString = errorBody.string()
+                                    try {
+                                        val errorModel = Gson().fromJson(errorString, ErrorModel::class.java)
+                                        var msg = errorModel.errors
+                                        when {
+                                            msg.contains("username", ignoreCase = true) &&
+                                                    msg.contains("Unique constraint", ignoreCase = true) -> {
+                                                "Username sudah digunakan. Silakan pilih username lain."
+                                            }
+                                            msg.contains("email", ignoreCase = true) &&
+                                                    msg.contains("Unique constraint", ignoreCase = true) -> {
+                                                "Email sudah terdaftar. Silakan gunakan email lain atau login."
+                                            }
+                                            msg.contains("Unique constraint", ignoreCase = true) -> {
+                                                "Username atau email sudah digunakan. Silakan coba yang lain."
+                                            }
+                                            else -> msg
+                                        }
+                                    } catch (e: Exception) {
+                                        when {
+                                            errorString.contains("username", ignoreCase = true) ->
+                                                "Username sudah digunakan. Silakan pilih username lain."
+                                            errorString.contains("email", ignoreCase = true) ->
+                                                "Email sudah terdaftar. Silakan gunakan email lain."
+                                            else -> "Registrasi gagal: ${res.code()}"
+                                        }
+                                    }
                                 } else {
-                                    "Terjadi kesalahan (${res.code()})"
+                                    when (res.code()) {
+                                        400 -> "Data tidak valid. Periksa kembali input Anda."
+                                        409 -> "Username atau email sudah terdaftar."
+                                        500 -> "Terjadi kesalahan server. Coba lagi nanti."
+                                        else -> "Registrasi gagal (${res.code()})"
+                                    }
                                 }
                             } catch (e: Exception) {
-                                "Gagal memproses error: ${res.code()}"
+                                "Gagal memproses error: ${e.message ?: "Unknown"}"
                             }
-
                             authenticationStatus = AuthenticationStatusUIState.Failed(errorMessage)
                         }
                     }
@@ -259,7 +274,6 @@ class AuthenticationViewModel(
                         )
                     }
                 })
-
             } catch (error: IOException) {
                 authenticationStatus = AuthenticationStatusUIState.Failed(
                     error.localizedMessage ?: "Kesalahan jaringan"
@@ -279,18 +293,15 @@ class AuthenticationViewModel(
                     override fun onResponse(call: Call<UserResponse>, res: Response<UserResponse>) {
                         viewModelScope.launch {
                             if (res.isSuccessful && res.body() != null) {
-                                // 1. Get token safely
                                 val responseData = res.body()?.data
                                 val token = responseData?.token
 
                                 if (token != null) {
                                     try {
-                                        // 2. Decode JWT safely
                                         val jwt = JWT(token)
                                         val username = jwt.getClaim("username").asString()
 
                                         if (username != null) {
-                                            // 3. Save only if we have all data
                                             savedUsernameToken(token, username, emailInput)
                                             authenticationStatus = AuthenticationStatusUIState.Success(responseData)
 
@@ -317,7 +328,6 @@ class AuthenticationViewModel(
                                 } catch (e: Exception) {
                                     "Login failed: ${res.code()}"
                                 }
-
                                 authenticationStatus = AuthenticationStatusUIState.Failed(errorMessage)
                             }
                         }
@@ -330,19 +340,17 @@ class AuthenticationViewModel(
                         }
                     }
                 })
-
             } catch (error: IOException) {
                 authenticationStatus = AuthenticationStatusUIState.Failed(error.localizedMessage ?: "Network error")
             }
         }
     }
 
-// [Modified] Accept email as a parameter
     private fun savedUsernameToken(token: String, username: String, email: String) {
         viewModelScope.launch {
             userRepository.saveUserToken(token)
             userRepository.saveUsername(username)
-            userRepository.saveUserEmail(email) // [New] Save the email
+            userRepository.saveUserEmail(email)
         }
     }
 

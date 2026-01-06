@@ -22,6 +22,8 @@ import com.example.alp_visprog.viewModel.HomeViewModel
 import com.example.alp_visprog.ui.theme.BrandOrange
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import coil.compose.AsyncImage
 import com.example.alp_visprog.R
 
@@ -32,12 +34,21 @@ fun HomeView(
     navController: NavController
 ) {
     val viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.loadHelpRequests()
     }
 
     val state by viewModel.homeUIState.collectAsState()
+    val cartStatusMessage by viewModel.cartStatusMessage.collectAsState()
+
+    // Show toast when cart status changes
+    LaunchedEffect(cartStatusMessage) {
+        cartStatusMessage?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     HomeContent(
         state = state,
@@ -45,6 +56,7 @@ fun HomeView(
         onRefresh = { viewModel.loadHelpRequests() },
         onFilterClick = { type, status -> viewModel.filterHelpRequests(type, status) },
         onSearch = { query -> viewModel.searchHelpRequests(query) },
+        onAddToCart = { helpRequestId -> viewModel.addToCart(helpRequestId) },
         navController = navController,
         modifier = modifier
     )
@@ -58,6 +70,7 @@ fun HomeContent(
     onRefresh: () -> Unit,
     onFilterClick: (String?, String?) -> Unit,
     onSearch: (String) -> Unit,
+    onAddToCart: (Int) -> Unit,
     modifier: Modifier = Modifier,
     navController: NavController
 ) {
@@ -85,30 +98,38 @@ fun HomeContent(
         )
 
         Column(modifier = Modifier.fillMaxSize()) {
-            // Enhanced header with better contrast
+            // IMPROVED: Enhanced header with rounded bottom corners and better design
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(140.dp)
-                    .background(BrandOrange)
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .background(
+                        BrandOrange,
+                        shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
+                    )
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Search Bar with Shopping Cart Button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Cari Barang atau Jasa...", fontSize = 14.sp, color = Color.Gray) },
+                        placeholder = {
+                            Text(
+                                "Cari Barang atau Jasa...",
+                                fontSize = 14.sp,
+                                color = Color.Gray.copy(alpha = 0.6f)
+                            )
+                        },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = "Search",
-                                modifier = Modifier.size(20.dp),
+                                modifier = Modifier.size(22.dp),
                                 tint = BrandOrange
                             )
                         },
@@ -126,32 +147,36 @@ fun HomeContent(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(44.dp),
-                        shape = RoundedCornerShape(12.dp),
+                            .height(52.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = Color.White,
                             focusedContainerColor = Color.White,
                             unfocusedBorderColor = Color.Transparent,
-                            focusedBorderColor = BrandOrange.copy(alpha = 0.5f)
+                            focusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            cursorColor = BrandOrange
                         ),
                         textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
                         singleLine = true
                     )
 
-                    // Shopping Cart Button
+                    // FIXED: Shopping Cart Button - Now properly navigates to ShoppingCart
                     Surface(
-                        modifier = Modifier.size(44.dp),
+                        modifier = Modifier.size(52.dp),
                         color = Color.White,
-                        shape = RoundedCornerShape(8.dp),
-                        onClick = { navController.navigate("ShoppingCart") },
-                        shadowElevation = 2.dp
+                        shape = RoundedCornerShape(16.dp),
+                        onClick = {
+                            // Navigate to Shopping Cart
+                            navController.navigate("ShoppingCart")
+                        },
+                        shadowElevation = 4.dp
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.ShoppingCart,
                                 contentDescription = "Shopping Cart",
                                 tint = BrandOrange,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(26.dp)
                             )
                         }
                     }
@@ -160,32 +185,32 @@ fun HomeContent(
                 // Location and View Controls
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Location
                     Surface(
-                        modifier = Modifier.weight(1f).height(44.dp),
-                        color = Color.White,
-                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        color = Color.White.copy(alpha = 0.95f),
+                        shape = RoundedCornerShape(14.dp),
                         shadowElevation = 2.dp
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Default.LocationOn,
                                 contentDescription = "Location",
                                 tint = BrandOrange,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(20.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = userLocation,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color(0xFF333333),
+                                color = Color(0xFF2C2C2C),
                                 maxLines = 1
                             )
                         }
@@ -193,17 +218,17 @@ fun HomeContent(
 
                     // View Toggle
                     Surface(
-                        modifier = Modifier.size(44.dp),
-                        color = if (isCompactView) BrandOrange else Color.White,
-                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.size(48.dp),
+                        color = if (isCompactView) Color.White else Color.White.copy(alpha = 0.25f),
+                        shape = RoundedCornerShape(14.dp),
                         onClick = { isCompactView = !isCompactView },
-                        shadowElevation = 2.dp
+                        shadowElevation = if (isCompactView) 3.dp else 0.dp
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = if (isCompactView) Icons.Default.ViewAgenda else Icons.Default.ViewStream,
                                 contentDescription = "Toggle View",
-                                tint = if (isCompactView) Color.White else BrandOrange,
+                                tint = if (isCompactView) BrandOrange else Color.White,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -211,17 +236,17 @@ fun HomeContent(
 
                     // Filter Toggle
                     Surface(
-                        modifier = Modifier.size(44.dp),
-                        color = if (showFilters) BrandOrange else Color.White,
-                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.size(48.dp),
+                        color = if (showFilters) Color.White else Color.White.copy(alpha = 0.25f),
+                        shape = RoundedCornerShape(14.dp),
                         onClick = { showFilters = !showFilters },
-                        shadowElevation = 2.dp
+                        shadowElevation = if (showFilters) 3.dp else 0.dp
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.FilterList,
                                 contentDescription = "Toggle Filters",
-                                tint = if (showFilters) Color.White else BrandOrange,
+                                tint = if (showFilters) BrandOrange else Color.White,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -229,7 +254,7 @@ fun HomeContent(
                 }
             }
 
-            // IMPROVED: Better filter chips with clearer labels
+            // IMPROVED: Better filter chips with clearer labels and rounded corners
             if (showFilters) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -239,8 +264,8 @@ fun HomeContent(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // Semua Filter
                         FilterChip(
@@ -272,6 +297,7 @@ fun HomeContent(
                                 selectedBorderColor = BrandOrange,
                                 borderWidth = 2.dp
                             ),
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         )
 
@@ -305,6 +331,7 @@ fun HomeContent(
                                 selectedBorderColor = BrandOrange,
                                 borderWidth = 2.dp
                             ),
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         )
 
@@ -338,6 +365,7 @@ fun HomeContent(
                                 selectedBorderColor = BrandOrange,
                                 borderWidth = 2.dp
                             ),
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -424,7 +452,9 @@ fun HomeContent(
                                 if (isCompactView) {
                                     HelpRequestCompactCard(
                                         request = helpRequest,
-                                        onAddToCart = {},
+                                        onAddToCart = {
+                                            onAddToCart(helpRequest.id)
+                                        },
                                         onContactSeller = {
                                             navController.navigate("create_exchange/${helpRequest.id}")
                                         },
@@ -435,7 +465,9 @@ fun HomeContent(
                                 } else {
                                     HelpRequestCard(
                                         request = helpRequest,
-                                        onAddToCart = {},
+                                        onAddToCart = {
+                                            onAddToCart(helpRequest.id)
+                                        },
                                         onContactSeller = {
                                             navController.navigate("create_exchange/${helpRequest.id}")
                                         },
