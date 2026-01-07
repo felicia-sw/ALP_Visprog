@@ -38,7 +38,10 @@ class HelpRequestRepository(
             imageUrl = imageUrl,
             categoryId = categoryId,
             contactPhone = contactPhone,
-            contactEmail = contactEmail
+            contactEmail = contactEmail,
+
+            // [FIX] Pass the userId here
+            userId = userId
         )
 
         return helpRequestAPIService.createHelpRequest(bearerToken, request)

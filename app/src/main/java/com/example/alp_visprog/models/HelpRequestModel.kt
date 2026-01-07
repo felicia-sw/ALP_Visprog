@@ -26,7 +26,6 @@ data class HelpRequestModel(
     val longitude: Double?,
 )
 
-// 2. The Create Request (What we send to the API)
 data class CreateHelpRequestRequest(
     val nameOfProduct: String,
     val description: String,
@@ -37,7 +36,10 @@ data class CreateHelpRequestRequest(
     val imageUrl: String,
     val categoryId: Int,
     val contactPhone: String,
-    val contactEmail: String
+    val contactEmail: String,
+
+    // [FIX] Add this field so it gets sent to the backend
+    val userId: Int
 )
 
 // 3. The Create Request with contact info (used by repository)
