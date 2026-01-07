@@ -1,6 +1,7 @@
 package com.example.alp_visprog.ui.route
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,12 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -47,11 +49,16 @@ import com.example.alp_visprog.views.SplashView
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+// Brand Colors
+private val OrangeGradientStart = Color(0xFFF9794D)
+private val OrangeGradientEnd = Color(0xFFFFB399)
+private val TealAccent = Color(0xFF4ECDC4)
+
 enum class AppView(val title: String, val icon: ImageVector? = null) {
     Home("Home", Icons.Filled.Home),
     Create(title = "Buat", Icons.Filled.Add),
     Profile(title = "Profil", Icons.Filled.Person),
-    ShoppingCart(title = "Keranjang", Icons.Filled.ShoppingCart)
+    ShoppingCart(title = "Keranjang", null)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,7 +71,10 @@ fun MyTopAppBar(
 ) {
     TopAppBar(
         title = {
-            Text(text = currentView?.title ?: AppView.Home.title)
+            Text(
+                text = currentView?.title ?: AppView.Home.title,
+                color = Color.White
+            )
         },
         modifier = modifier,
         navigationIcon = {
@@ -72,11 +82,15 @@ fun MyTopAppBar(
                 IconButton(onClick = navigateUp) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back"
+                        contentDescription = "Back",
+                        tint = Color.White
                     )
                 }
             }
-        }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = OrangeGradientStart
+        )
     )
 }
 
@@ -87,112 +101,188 @@ fun CustomBottomNavigationBar(
     onFabClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.shadow(8.dp)) {
-        NavigationBar(
+    Box(
+        modifier = modifier
+            .shadow(
+                elevation = 16.dp,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                clip = false
+            )
+    ) {
+        Surface(
             modifier = Modifier.navigationBarsPadding(),
-            containerColor = Color.White,
-            contentColor = Color.Gray,
-            tonalElevation = 8.dp
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            color = Color.White,
+            shadowElevation = 0.dp
         ) {
-            val homeSelected = currentDestination?.hierarchy?.any { it.route == AppView.Home.name } == true
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        imageVector = Icons.Filled.Home,
-                        contentDescription = "Home",
-                        tint = if (homeSelected) Color(0xFFFF6B35) else Color(0xFF999999),
-                        modifier = Modifier.size(24.dp)
+            NavigationBar(
+                containerColor = Color.Transparent,
+                contentColor = Color.Gray,
+                tonalElevation = 0.dp,
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                val homeSelected = currentDestination?.hierarchy?.any { it.route == AppView.Home.name } == true
+                NavigationBarItem(
+                    icon = {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(
+                                    if (homeSelected) {
+                                        Brush.verticalGradient(
+                                            colors = listOf(
+                                                OrangeGradientStart.copy(alpha = 0.15f),
+                                                OrangeGradientEnd.copy(alpha = 0.1f)
+                                            )
+                                        )
+                                    } else {
+                                        Brush.verticalGradient(
+                                            colors = listOf(Color.Transparent, Color.Transparent)
+                                        )
+                                    },
+                                    shape = RoundedCornerShape(12.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Home,
+                                contentDescription = "Home",
+                                tint = if (homeSelected) OrangeGradientStart else Color(0xFF999999),
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                    },
+                    label = {
+                        Text(
+                            "Home",
+                            color = if (homeSelected) OrangeGradientStart else Color(0xFF666666),
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    },
+                    selected = homeSelected,
+                    onClick = {
+                        navController.navigate(AppView.Home.name) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = OrangeGradientStart,
+                        selectedTextColor = OrangeGradientStart,
+                        indicatorColor = Color.Transparent,
+                        unselectedIconColor = Color(0xFF999999),
+                        unselectedTextColor = Color(0xFF666666)
                     )
-                },
-                label = {
-                    Text(
-                        "Home",
-                        color = if (homeSelected) Color(0xFFFF6B35) else Color(0xFF666666),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                },
-                selected = homeSelected,
-                onClick = {
-                    navController.navigate(AppView.Home.name) {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color(0xFFFF6B35),
-                    selectedTextColor = Color(0xFFFF6B35),
-                    indicatorColor = Color(0xFFFFE5DB),
-                    unselectedIconColor = Color(0xFF999999),
-                    unselectedTextColor = Color(0xFF666666)
                 )
-            )
 
-            // Spacer for FAB
-            NavigationBarItem(
-                icon = { },
-                label = { Text("") },
-                selected = false,
-                onClick = { },
-                enabled = false
-            )
-
-            val profileSelected = currentDestination?.hierarchy?.any { it.route == AppView.Profile.name } == true
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        imageVector = Icons.Filled.Person,
-                        contentDescription = "Profil",
-                        tint = if (profileSelected) Color(0xFFFF6B35) else Color(0xFF999999),
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                label = {
-                    Text(
-                        "Profil",
-                        color = if (profileSelected) Color(0xFFFF6B35) else Color(0xFF666666),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                },
-                selected = profileSelected,
-                onClick = {
-                    navController.navigate(AppView.Profile.name) {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color(0xFFFF6B35),
-                    selectedTextColor = Color(0xFFFF6B35),
-                    indicatorColor = Color(0xFFFFE5DB),
-                    unselectedIconColor = Color(0xFF999999),
-                    unselectedTextColor = Color(0xFF666666)
+                // Spacer for FAB
+                NavigationBarItem(
+                    icon = { },
+                    label = { Text("") },
+                    selected = false,
+                    onClick = { },
+                    enabled = false
                 )
-            )
+
+                val profileSelected = currentDestination?.hierarchy?.any { it.route == AppView.Profile.name } == true
+                NavigationBarItem(
+                    icon = {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(
+                                    if (profileSelected) {
+                                        Brush.verticalGradient(
+                                            colors = listOf(
+                                                TealAccent.copy(alpha = 0.15f),
+                                                TealAccent.copy(alpha = 0.1f)
+                                            )
+                                        )
+                                    } else {
+                                        Brush.verticalGradient(
+                                            colors = listOf(Color.Transparent, Color.Transparent)
+                                        )
+                                    },
+                                    shape = RoundedCornerShape(12.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Person,
+                                contentDescription = "Profil",
+                                tint = if (profileSelected) TealAccent else Color(0xFF999999),
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                    },
+                    label = {
+                        Text(
+                            "Profil",
+                            color = if (profileSelected) TealAccent else Color(0xFF666666),
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    },
+                    selected = profileSelected,
+                    onClick = {
+                        navController.navigate(AppView.Profile.name) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = TealAccent,
+                        selectedTextColor = TealAccent,
+                        indicatorColor = Color.Transparent,
+                        unselectedIconColor = Color(0xFF999999),
+                        unselectedTextColor = Color(0xFF666666)
+                    )
+                )
+            }
         }
 
-        // FAB
+        // Enhanced FAB with Gradient
         FloatingActionButton(
             onClick = onFabClick,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 0.dp)
-                .size(64.dp)
-                .shadow(12.dp, CircleShape),
-            containerColor = Color(0xFF4A5568),
+                .size(68.dp)
+                .shadow(16.dp, CircleShape),
+            containerColor = Color.Transparent,
             shape = CircleShape,
             elevation = FloatingActionButtonDefaults.elevation(
-                defaultElevation = 8.dp,
-                pressedElevation = 12.dp
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp
             )
         ) {
-            Icon(
-                imageVector = Icons.Filled.Add,
-                contentDescription = "Buat",
-                tint = Color.White,
-                modifier = Modifier.size(32.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                OrangeGradientStart,
+                                OrangeGradientEnd
+                            )
+                        ),
+                        shape = CircleShape
+                    )
+                    .border(
+                        width = 3.dp,
+                        color = Color.White,
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "Buat",
+                    tint = Color.White,
+                    modifier = Modifier.size(34.dp)
+                )
+            }
         }
     }
 }
@@ -206,7 +296,6 @@ fun AppRouting() {
     val currentRoute = currentDestination?.route
     val currentView = AppView.entries.find { it.name == currentRoute }
 
-    // Check if current screen is auth screen or splash
     val isAuthScreen = currentRoute == "register" || currentRoute == "login" || currentRoute == "splash" || currentRoute == "auth_check"
 
     val shouldShowGlobalTopBar = !isAuthScreen &&
@@ -247,7 +336,6 @@ fun AppRouting() {
             startDestination = "splash",
             modifier = if (isAuthScreen) Modifier else Modifier.padding(innerPadding)
         ) {
-            // Splash Screen - Entry point
             composable("splash") {
                 SplashView(
                     onSplashComplete = {
@@ -258,17 +346,14 @@ fun AppRouting() {
                 )
             }
 
-            // Auth Check Screen - Determines if user is logged in (shows loading indicator)
             composable("auth_check") {
                 AuthCheckScreen(
                     onAuthenticated = {
-                        // Always send to Register, even if authenticated
                         navController.navigate("register") {
                             popUpTo("auth_check") { inclusive = true }
                         }
                     },
                     onNotAuthenticated = {
-                        // Send unauthenticated users to Register
                         navController.navigate("register") {
                             popUpTo("auth_check") { inclusive = true }
                         }
@@ -331,7 +416,9 @@ fun AppRouting() {
         if (showBottomSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showBottomSheet = false },
-                sheetState = sheetState
+                sheetState = sheetState,
+                containerColor = Color.Transparent,
+                dragHandle = null
             ) {
                 CreateHelpRequestView(
                     onBackClick = {
@@ -347,10 +434,6 @@ fun AppRouting() {
     }
 }
 
-/**
- * AuthCheckScreen - Checks authentication status and shows loading indicator
- * This is where the "loading page" properly appears - only when checking auth state
- */
 @Composable
 fun AuthCheckScreen(
     onAuthenticated: () -> Unit,
@@ -360,23 +443,27 @@ fun AuthCheckScreen(
     val userRepository = app.container.userRepository
 
     LaunchedEffect(Unit) {
-        // Check authentication status
         val token = userRepository.currentUserToken.first()
 
         if (token != "Unknown" && token.isNotBlank()) {
-            // User is authenticated
             onAuthenticated()
         } else {
-            // User needs to login
             onNotAuthenticated()
         }
     }
 
-    // Show loading indicator while checking
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFF6E3)),
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        OrangeGradientStart.copy(alpha = 0.1f),
+                        OrangeGradientEnd.copy(alpha = 0.05f),
+                        Color(0xFFFFFBF7)
+                    )
+                )
+            ),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -384,7 +471,7 @@ fun AuthCheckScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             CircularProgressIndicator(
-                color = Color(0xFFF9794D),
+                color = OrangeGradientStart,
                 strokeWidth = 4.dp,
                 modifier = Modifier.size(48.dp)
             )
