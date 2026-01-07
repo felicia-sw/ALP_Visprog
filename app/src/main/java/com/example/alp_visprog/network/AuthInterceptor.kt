@@ -16,11 +16,20 @@ class AuthInterceptor(
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
+        val requestUrl = originalRequest.url.encodedPath
+
+        // [FIX] Ignore Login and Register endpoints
+        // If we send a stale/invalid token to these endpoints, the server might return 401.
+        if (requestUrl.contains("/login", ignoreCase = true) ||
+            requestUrl.contains("/register", ignoreCase = true) ||
+            requestUrl.contains("/create-user", ignoreCase = true)) {
+            return chain.proceed(originalRequest)
+        }
 
         // Get the current auth token from DataStore via UserRepository
         val token = runBlocking {
             try {
-                userRepository.getToken().first()
+                userRepository.currentUserToken.first()
             } catch (e: Exception) {
                 null
             }
