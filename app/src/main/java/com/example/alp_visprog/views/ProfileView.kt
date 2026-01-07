@@ -313,9 +313,9 @@ private fun ProfileContent(
                         .padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Name
+                    // [FIX] Name - Handle null fullName
                     Text(
-                        text = profile.fullName,
+                        text = profile.fullName ?: profile.username ?: "Pengguna",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp
@@ -323,7 +323,7 @@ private fun ProfileContent(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // Location
+                    // [FIX] Location - Handle null location
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
@@ -336,7 +336,7 @@ private fun ProfileContent(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = profile.location,
+                            text = profile.location ?: "Belum ada lokasi",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.Gray
                         )
@@ -534,7 +534,6 @@ private fun ProfileContent(
         }
     }
 }
-
 @Composable
 fun HelpRequestItemCard(
     helpRequest: HelpRequestModel,
@@ -601,11 +600,13 @@ fun EditProfileDialog(
     onDismiss: () -> Unit,
     onSave: (String, String, Double, Double, String?) -> Unit
 ) {
-    var fullName by remember { mutableStateOf(profile.fullName) }
-    var location by remember { mutableStateOf(profile.location) }
-    var latitude by remember { mutableStateOf(profile.latitude) }
-    var longitude by remember { mutableStateOf(profile.longitude) }
+    // [FIX] Initialize with fallbacks to avoid NullPointerException
+    var fullName by remember { mutableStateOf(profile.fullName ?: "") }
+    var location by remember { mutableStateOf(profile.location ?: "") }
+    var latitude by remember { mutableStateOf(profile.latitude ?: 0.0) }
+    var longitude by remember { mutableStateOf(profile.longitude ?: 0.0) }
     var bio by remember { mutableStateOf(profile.bio ?: "") }
+
     var showLocationPicker by remember { mutableStateOf(false) }
 
     // Location Picker Dialog

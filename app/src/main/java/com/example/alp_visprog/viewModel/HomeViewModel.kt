@@ -118,8 +118,11 @@ class HomeViewModel(
                             val responseBody = res.body()
                             if (res.isSuccessful && responseBody != null && responseBody.data != null) {
                                 userLocation = responseBody.data.location ?: "Unknown"
-                                userLat = responseBody.data.latitude
-                                userLon = responseBody.data.longitude
+
+                                // [FIX] Use Elvis operator ?: 0.0 to handle nulls
+                                userLat = responseBody.data.latitude ?: 0.0
+                                userLon = responseBody.data.longitude ?: 0.0
+
                                 Log.d(TAG, "✅ User location fetched: $userLocation, lat: $userLat, lon: $userLon")
                             } else {
                                 userLocation = "Unknown"
