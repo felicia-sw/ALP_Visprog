@@ -11,10 +11,12 @@ import retrofit2.http.POST
 
 interface HelpRequestAPIService {
 
-    @GET("api/help-request")
+    // [FIX] Added 's' to match backend '/api/help-requests'
+    @GET("api/help-requests")
     fun getAllHelpRequests(): Call<GetAllHelpRequestsResponse>
 
-    @POST("api/help-request")
+    // [FIX] Added 's' to match backend '/api/help-requests'
+    @POST("api/help-requests")
     fun createHelpRequest(
         @Header("Authorization") bearerToken: String,
         @Body request: CreateHelpRequestRequest
