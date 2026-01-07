@@ -75,4 +75,6 @@ dependencies {
 
     // (Ensure these are also present as per your file, which they are)
     implementation(libs.androidx.material.icons.extended)
+
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }

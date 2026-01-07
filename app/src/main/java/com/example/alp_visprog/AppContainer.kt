@@ -2,6 +2,7 @@ package com.example.alp_visprog
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.example.alp_visprog.network.AuthInterceptor
 import com.example.alp_visprog.repositories.AuthenticationRepository
 import com.example.alp_visprog.repositories.AuthenticationRepositoryInterface
 import com.example.alp_visprog.repositories.ExchangeRepository
@@ -21,6 +22,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 interface AppContainerInterface {
     val authenticationRepository: AuthenticationRepositoryInterface
@@ -36,7 +38,12 @@ class AppContainer(
     private val backendURL: String
 ) : AppContainerInterface {
 
-    // Init Retrofit with logging
+
+    private val authInterceptor: AuthInterceptor by lazy {
+        AuthInterceptor(userRepository)
+    }
+
+    // Init Retrofit with logging AND auth interceptor
     private val retrofit: Retrofit by lazy {
         initRetrofit()
     }
@@ -47,6 +54,10 @@ class AppContainer(
 
         val client = OkHttpClient.Builder()
             .addInterceptor(logging)
+            .addInterceptor(authInterceptor) // ADDED: Auto token injection
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .build()
 
         return Retrofit.Builder()
